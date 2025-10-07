@@ -1,41 +1,17 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
-import { ArrowRight, Sparkles, LogOut } from "lucide-react";
+import { ArrowRight, Sparkles } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
 const Index = () => {
   const [email, setEmail] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [currentUser, setCurrentUser] = useState<any>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
-
-  useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setCurrentUser(session?.user);
-      if (session?.user?.email) {
-        setEmail(session.user.email);
-      }
-    });
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      setCurrentUser(session?.user);
-      if (session?.user?.email) {
-        setEmail(session.user.email);
-      }
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
-
-  const handleSignOut = async () => {
-    await supabase.auth.signOut();
-    navigate("/auth");
-  };
 
   const OUT_OF_TEXTS_ERROR = "OUT_OF_TEXTS";
 
@@ -96,7 +72,7 @@ const Index = () => {
             email: normalizedEmail,
             campaign_id: campaign.id,
             state: "assigned",
-            user_id: currentUser?.id,
+            user_id: null,
           })
           .select()
           .single();
@@ -158,7 +134,7 @@ const Index = () => {
                 text_option_id: textId,
                 text_snapshot_md: textOption.text_md,
                 status: "assigned",
-                user_id: currentUser?.id,
+                user_id: null,
               });
             }
           }
@@ -184,13 +160,6 @@ const Index = () => {
       <div className="absolute inset-0 bg-gradient-to-t from-primary/10 via-transparent to-transparent pointer-events-none" />
       
       <div className="container max-w-2xl mx-auto px-4 py-16 relative">
-        <div className="flex justify-end mb-4">
-          <Button variant="outline" size="sm" onClick={handleSignOut}>
-            <LogOut className="w-4 h-4 mr-2" />
-            Sign Out
-          </Button>
-        </div>
-
         <div className="text-center mb-12">
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20 mb-6">
             <Sparkles className="w-4 h-4 text-primary" />

@@ -21,10 +21,10 @@ const App = () => (
     <BrowserRouter>
       <Routes>
         <Route path="/auth" element={<Auth />} />
-        <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
-        <Route path="/instructions/:enrollmentId" element={<ProtectedRoute><Instructions /></ProtectedRoute>} />
-        <Route path="/payment/:enrollmentId" element={<ProtectedRoute><Payment /></ProtectedRoute>} />
-        <Route path="/confirmation/:enrollmentId" element={<ProtectedRoute><Confirmation /></ProtectedRoute>} />
+        <Route path="/" element={<Index />} />
+        <Route path="/instructions/:enrollmentId" element={<Instructions />} />
+        <Route path="/payment/:enrollmentId" element={<Payment />} />
+        <Route path="/confirmation/:enrollmentId" element={<Confirmation />} />
         <Route path="/admin" element={<Admin />} />
         {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
         <Route path="*" element={<NotFound />} />
