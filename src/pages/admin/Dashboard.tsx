@@ -131,12 +131,12 @@ export function Dashboard({ adminKey }: DashboardProps) {
 
   const handleDeleteAllTexts = async () => {
     try {
-      const { error } = await supabase
-        .from("product_text_options")
-        .delete()
-        .neq('id', '00000000-0000-0000-0000-000000000000');
+      const { data, error } = await supabase.functions.invoke('admin-bulk-actions', {
+        body: { action: 'delete_all_texts', adminKey }
+      });
 
       if (error) throw error;
+      if (data?.error) throw new Error(data.error);
 
       toast({
         title: "Success",
@@ -148,7 +148,7 @@ export function Dashboard({ adminKey }: DashboardProps) {
       console.error("Error:", error);
       toast({
         title: "Error",
-        description: "Failed to delete text options",
+        description: error instanceof Error ? error.message : "Failed to delete text options",
         variant: "destructive",
       });
     }
@@ -156,23 +156,12 @@ export function Dashboard({ adminKey }: DashboardProps) {
 
   const handleDeleteAllProofs = async () => {
     try {
-      // Delete from storage
-      const { data: files } = await supabase.storage
-        .from('proofs')
-        .list();
-
-      if (files && files.length > 0) {
-        const filePaths = files.map(f => f.name);
-        await supabase.storage.from('proofs').remove(filePaths);
-      }
-
-      // Delete file records
-      const { error } = await supabase
-        .from("files")
-        .delete()
-        .neq('id', '00000000-0000-0000-0000-000000000000');
+      const { data, error } = await supabase.functions.invoke('admin-bulk-actions', {
+        body: { action: 'delete_all_proofs', adminKey }
+      });
 
       if (error) throw error;
+      if (data?.error) throw new Error(data.error);
 
       toast({
         title: "Success",
@@ -184,7 +173,7 @@ export function Dashboard({ adminKey }: DashboardProps) {
       console.error("Error:", error);
       toast({
         title: "Error",
-        description: "Failed to delete proofs",
+        description: error instanceof Error ? error.message : "Failed to delete proofs",
         variant: "destructive",
       });
     }
@@ -192,19 +181,12 @@ export function Dashboard({ adminKey }: DashboardProps) {
 
   const handleDeleteAllData = async () => {
     try {
-      // Delete in order due to foreign key constraints
-      await supabase.from("payment_info").delete().neq('id', '00000000-0000-0000-0000-000000000000');
-      await supabase.from("assignments").delete().neq('id', '00000000-0000-0000-0000-000000000000');
-      await supabase.from("enrollments").delete().neq('id', '00000000-0000-0000-0000-000000000000');
-      
-      // Delete storage files
-      const { data: files } = await supabase.storage.from('proofs').list();
-      if (files && files.length > 0) {
-        const filePaths = files.map(f => f.name);
-        await supabase.storage.from('proofs').remove(filePaths);
-      }
-      
-      await supabase.from("files").delete().neq('id', '00000000-0000-0000-0000-000000000000');
+      const { data, error } = await supabase.functions.invoke('admin-bulk-actions', {
+        body: { action: 'delete_all_data', adminKey }
+      });
+
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
 
       toast({
         title: "Success",
@@ -216,7 +198,7 @@ export function Dashboard({ adminKey }: DashboardProps) {
       console.error("Error:", error);
       toast({
         title: "Error",
-        description: "Failed to delete all data",
+        description: error instanceof Error ? error.message : "Failed to delete all data",
         variant: "destructive",
       });
     }
