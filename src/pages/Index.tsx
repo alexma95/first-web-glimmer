@@ -165,11 +165,11 @@ const Index = () => {
           </div>
           
           <h1 className="text-5xl font-bold mb-4 bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
-            Get Your Unique Texts
+            Quick & Easy Book Gig - Earn $8-10 in 3 minutes or less
           </h1>
           
           <p className="text-lg text-muted-foreground max-w-md mx-auto">
-            Enter your email to receive personalized text assignments for this campaign
+            Insert your email to enroll
           </p>
         </div>
 
