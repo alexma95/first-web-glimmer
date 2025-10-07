@@ -192,32 +192,6 @@ const Index = () => {
             <span className="block text-2xl sm:text-3xl md:text-4xl mt-3">Earn $8-10 in 3 Minutes</span>
           </h1>
           
-          <div className="max-w-xl mx-auto space-y-3 sm:space-y-4 mb-6 sm:mb-8 px-4">
-            <div className="flex items-start gap-3 text-left">
-              <CheckCircle2 className="w-5 h-5 sm:w-6 sm:h-6 text-primary flex-shrink-0 mt-0.5" />
-              <p className="text-sm sm:text-base text-muted-foreground">
-                <strong className="text-foreground font-semibold">Download books</strong> or read summaries (your choice)
-              </p>
-            </div>
-            <div className="flex items-start gap-3 text-left">
-              <CheckCircle2 className="w-5 h-5 sm:w-6 sm:h-6 text-primary flex-shrink-0 mt-0.5" />
-              <p className="text-sm sm:text-base text-muted-foreground">
-                <strong className="text-foreground font-semibold">Write reviews</strong> on Amazon with provided text
-              </p>
-            </div>
-            <div className="flex items-start gap-3 text-left">
-              <CheckCircle2 className="w-5 h-5 sm:w-6 sm:h-6 text-primary flex-shrink-0 mt-0.5" />
-              <p className="text-sm sm:text-base text-muted-foreground">
-                <strong className="text-foreground font-semibold">Submit screenshots</strong> and payment info
-              </p>
-            </div>
-            <div className="flex items-start gap-3 text-left">
-              <CheckCircle2 className="w-5 h-5 sm:w-6 sm:h-6 text-primary flex-shrink-0 mt-0.5" />
-              <p className="text-sm sm:text-base text-muted-foreground">
-                <strong className="text-foreground font-semibold">Get paid within 2 business days</strong> (often immediately)
-              </p>
-            </div>
-          </div>
         </div>
 
         <Card className="p-6 sm:p-8 backdrop-blur-sm bg-card border-primary/20 shadow-xl">
@@ -253,7 +227,7 @@ const Index = () => {
                 "Creating assignment..."
               ) : (
                 <>
-                  Get My Assignments
+                  Join Now
                   <ArrowRight className="ml-2 h-4 w-4 sm:h-5 sm:w-5" />
                 </>
               )}
