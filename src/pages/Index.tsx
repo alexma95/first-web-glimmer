@@ -5,10 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { ArrowRight, Sparkles } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import type { Database } from "@/integrations/supabase/types";
 import { useToast } from "@/hooks/use-toast";
-
-type TextRow = Database["public"]["Tables"]["texts"]["Row"];
 
 const Index = () => {
   const [email, setEmail] = useState("");
@@ -22,134 +19,133 @@ const Index = () => {
     e.preventDefault();
     if (!email) return;
 
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      toast({
+        title: "Invalid email",
+        description: "Please enter a valid email address",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsLoading(true);
-    let assignmentId: string | null = null;
-    const assignedTextIds: string[] = [];
 
     try {
-      // Get active campaign (for now, just the first one)
+      const normalizedEmail = email.toLowerCase().trim();
+
+      // Get active campaign
       const { data: campaigns, error: campaignError } = await supabase
-        .from("campaigns")
+        .from("campaigns_new")
         .select("*")
         .eq("status", "active")
         .limit(1);
 
-      if (campaignError || !campaigns?.length) {
-        throw new Error("No active campaign found");
-      }
+      if (campaignError) throw campaignError;
 
-      const campaign = campaigns[0];
-
-      // Check if user already has an assignment
-      const { data: existingAssignment } = await supabase
-        .from("user_assignments")
-        .select("*")
-        .eq("email", email)
-        .eq("campaign_id", campaign.id)
-        .maybeSingle();
-
-      if (existingAssignment) {
-        // User already has assignment, redirect to their texts
-        navigate(`/assignment/${existingAssignment.id}`);
-        return;
-      }
-
-      // Create new assignment
-      const { data: newAssignment, error: assignmentError } = await supabase
-        .from("user_assignments")
-        .insert({
-          email,
-          campaign_id: campaign.id,
-        })
-        .select()
-        .single();
-
-      if (assignmentError) throw assignmentError;
-
-      assignmentId = newAssignment.id;
-
-      // Get all products for this campaign
-      const { data: products, error: productsError } = await supabase
-        .from("products")
-        .select("*")
-        .eq("campaign_id", campaign.id)
-        .order("position");
-
-      if (productsError) throw productsError;
-
-      // Assign texts for each product using atomic claim RPC
-      for (const product of products) {
-        const { data: claimedText, error: claimError } = await (supabase as any)
-          .rpc("claim_text", {
-            p_assignment_id: newAssignment.id,
-            p_product_id: product.id,
-          });
-
-        if (claimError) {
-          if (claimError.message === "NO_TEXTS_AVAILABLE") {
-            const error = new Error(OUT_OF_TEXTS_ERROR) as Error & { productId?: string };
-            error.productId = product.id;
-            throw error;
-          }
-
-          throw claimError;
-        }
-
-        if (!claimedText) {
-          throw new Error("Failed to claim text");
-        }
-
-        assignedTextIds.push((claimedText as TextRow).id);
-
-        // Create assignment_text record
-        const { error: assignmentTextError } = await supabase
-          .from("assignment_texts")
-          .insert({
-            assignment_id: newAssignment.id,
-            product_id: product.id,
-            text_id: (claimedText as TextRow).id,
-          });
-
-        if (assignmentTextError) throw assignmentTextError;
-      }
-
-      // Navigate to assignment page
-      navigate(`/assignment/${newAssignment.id}`);
-    } catch (error) {
-      console.error("Error creating assignment:", error);
-      console.error("Full error details:", JSON.stringify(error, null, 2));
-
-      // Attempt to roll back any partial assignment that may have been created
-      try {
-        if (assignmentId) {
-          await supabase.from("assignment_texts").delete().eq("assignment_id", assignmentId);
-          if (assignedTextIds.length > 0) {
-            await supabase
-              .from("texts")
-              .update({ is_assigned: false })
-              .in("id", assignedTextIds);
-          }
-          await supabase.from("user_assignments").delete().eq("id", assignmentId);
-        }
-      } catch (rollbackError) {
-        console.error("Error rolling back assignment:", rollbackError);
-      }
-
-      if (error instanceof Error && error.message === OUT_OF_TEXTS_ERROR) {
+      if (!campaigns || campaigns.length === 0) {
         toast({
-          title: "Campaign out of texts",
-          description: "All available texts for this campaign have already been assigned. Please check back later.",
+          title: "No active campaign",
+          description: "There are no active campaigns at the moment. Please check back later.",
           variant: "destructive",
         });
         return;
       }
 
+      const campaign = campaigns[0];
+
+      // Check for existing enrollment
+      let { data: enrollment, error: enrollmentError } = await supabase
+        .from("enrollments")
+        .select("*")
+        .eq("email", normalizedEmail)
+        .eq("campaign_id", campaign.id)
+        .maybeSingle();
+
+      if (enrollmentError) throw enrollmentError;
+
+      if (!enrollment) {
+        // Create new enrollment
+        const { data: newEnrollment, error: createError } = await supabase
+          .from("enrollments")
+          .insert({
+            email: normalizedEmail,
+            campaign_id: campaign.id,
+            state: "assigned",
+          })
+          .select()
+          .single();
+
+        if (createError) throw createError;
+        enrollment = newEnrollment;
+
+        // Get products for this campaign
+        const { data: products, error: productsError } = await supabase
+          .from("products_new")
+          .select("*")
+          .eq("campaign_id", campaign.id)
+          .eq("status", "active")
+          .order("position");
+
+        if (productsError) throw productsError;
+
+        if (!products || products.length === 0) {
+          throw new Error("No products found for this campaign");
+        }
+
+        // Assign texts for each product
+        for (const product of products) {
+          // Check if assignment already exists
+          const { data: existingAssignment } = await supabase
+            .from("assignments")
+            .select("*")
+            .eq("enrollment_id", enrollment.id)
+            .eq("product_id", product.id)
+            .maybeSingle();
+
+          if (!existingAssignment) {
+            // Claim a text option
+            const { data: textId, error: claimError } = await supabase.rpc(
+              "claim_text_option",
+              {
+                p_product_id: product.id,
+                p_email: normalizedEmail,
+              }
+            );
+
+            if (claimError || !textId) {
+              console.warn(`No texts available for product ${product.title}`);
+              continue;
+            }
+
+            // Get the text content
+            const { data: textOption } = await supabase
+              .from("product_text_options")
+              .select("text_md")
+              .eq("id", textId)
+              .single();
+
+            if (textOption) {
+              // Create assignment
+              await supabase.from("assignments").insert({
+                enrollment_id: enrollment.id,
+                product_id: product.id,
+                text_option_id: textId,
+                text_snapshot_md: textOption.text_md,
+                status: "assigned",
+              });
+            }
+          }
+        }
+      }
+
+      // Navigate to instructions
+      navigate(`/instructions/${enrollment.id}`);
+    } catch (error) {
+      console.error("Error:", error);
       toast({
         title: "Error",
-        description:
-          error instanceof Error && error.message
-            ? error.message
-            : "Failed to create assignment",
+        description: error instanceof Error ? error.message : "Failed to create enrollment",
         variant: "destructive",
       });
     } finally {
