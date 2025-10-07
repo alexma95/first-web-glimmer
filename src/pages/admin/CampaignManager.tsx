@@ -88,7 +88,10 @@ export function CampaignManager({ adminKey }: CampaignManagerProps) {
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error("Clone error:", error);
+        throw error;
+      }
 
       toast({
         title: "Success",
