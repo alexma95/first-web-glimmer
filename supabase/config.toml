@@ -1,1 +1,4 @@
 project_id = "wuqztxmxvqikjyfrlecc"
+
+[functions.admin-manage-text-options]
+verify_jwt = false

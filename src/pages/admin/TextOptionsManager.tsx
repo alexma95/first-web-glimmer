@@ -80,17 +80,17 @@ export function TextOptionsManager({ adminKey }: TextOptionsManagerProps) {
         .map((l) => l.trim())
         .filter((l) => l.length > 0);
 
-      const inserts = lines.map((line) => ({
-        product_id: selectedProductId,
-        text_md: line,
-        status: "available" as const,
-      }));
-
-      const { error } = await supabase
-        .from("product_text_options")
-        .insert(inserts);
+      const { data, error } = await supabase.functions.invoke('admin-manage-text-options', {
+        body: {
+          action: 'bulk_add',
+          adminKey,
+          productId: selectedProductId,
+          texts: lines,
+        },
+      });
 
       if (error) throw error;
+      if (data?.error) throw new Error(data.error);
 
       toast({
         title: "Success",
@@ -103,7 +103,7 @@ export function TextOptionsManager({ adminKey }: TextOptionsManagerProps) {
       console.error("Error:", error);
       toast({
         title: "Error",
-        description: "Failed to add text options",
+        description: error instanceof Error ? error.message : "Failed to add text options",
         variant: "destructive",
       });
     } finally {
@@ -115,12 +115,17 @@ export function TextOptionsManager({ adminKey }: TextOptionsManagerProps) {
     const newStatus = currentStatus === "available" ? "disabled" : "available";
 
     try {
-      const { error } = await supabase
-        .from("product_text_options")
-        .update({ status: newStatus })
-        .eq("id", id);
+      const { data, error } = await supabase.functions.invoke('admin-manage-text-options', {
+        body: {
+          action: 'update_status',
+          adminKey,
+          textOptionId: id,
+          status: newStatus,
+        },
+      });
 
       if (error) throw error;
+      if (data?.error) throw new Error(data.error);
 
       toast({
         title: "Success",
@@ -132,7 +137,7 @@ export function TextOptionsManager({ adminKey }: TextOptionsManagerProps) {
       console.error("Error:", error);
       toast({
         title: "Error",
-        description: "Failed to update status",
+        description: error instanceof Error ? error.message : "Failed to update status",
         variant: "destructive",
       });
     }
