@@ -181,11 +181,6 @@ const Index = () => {
       
       <div className="container max-w-3xl mx-auto px-4 sm:px-6 py-8 sm:py-16 relative">
         <div className="text-center mb-8 sm:mb-12">
-          <div className="inline-flex items-center gap-2 px-3 sm:px-4 py-2 rounded-full bg-primary/10 border border-primary/20 mb-4 sm:mb-6">
-            <Sparkles className="w-3 h-3 sm:w-4 sm:h-4 text-primary" />
-            <span className="text-xs sm:text-sm font-medium text-foreground">Campaign Text Assignment</span>
-          </div>
-          
           <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4 sm:mb-6 leading-tight px-4">
             <span className="block mb-2">Quick & Easy</span>
             <span className="block text-primary italic">Book Review Gig</span>

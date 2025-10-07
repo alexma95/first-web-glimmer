@@ -62,22 +62,24 @@ export function ProductCard({ assignment, uploadedFile, onFileChange, onUpload }
       </div>
 
       <div className="space-y-4">
-        <div className="flex gap-3">
+        <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
           <Button
             variant="default"
             size="sm"
+            className="w-full sm:w-auto text-xs sm:text-sm"
             onClick={() => window.open(assignment.products_new.review_link_url, "_blank")}
           >
-            <ExternalLink className="w-4 h-4 mr-2" />
-            Click Here to Leave the Review
+            <ExternalLink className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2 flex-shrink-0" />
+            <span className="truncate">Click Here to Leave the Review</span>
           </Button>
           <Button
             variant="outline"
             size="sm"
+            className="w-full sm:w-auto text-xs sm:text-sm"
             onClick={() => window.open(assignment.products_new.resource_link_url, "_blank")}
           >
-            <ExternalLink className="w-4 h-4 mr-2" />
-            Click Here To Download the Full eBook
+            <ExternalLink className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2 flex-shrink-0" />
+            <span className="truncate">Download the Full eBook</span>
           </Button>
         </div>
 
@@ -104,15 +106,18 @@ export function ProductCard({ assignment, uploadedFile, onFileChange, onUpload }
           <label className="text-sm font-medium mb-2 block">
             Please Upload the Screenshot of your email confirmation of the review OR the amazon page with the confirmation.
           </label>
-          <div className="flex gap-2">
-            <Input
-              type="file"
-              accept="image/*,.pdf,.heic"
-              onChange={(e) => onFileChange(e.target.files?.[0] || null)}
-              disabled={!!assignment.proof_file_id}
-            />
+          <div className="flex flex-col sm:flex-row gap-2">
+            <label className="flex-1 cursor-pointer">
+              <Input
+                type="file"
+                accept="image/*,.pdf,.heic"
+                onChange={(e) => onFileChange(e.target.files?.[0] || null)}
+                disabled={!!assignment.proof_file_id}
+                className="cursor-pointer"
+              />
+            </label>
             {assignment.proof_file_id && (
-              <Button disabled variant="outline">
+              <Button disabled variant="outline" className="w-full sm:w-auto">
                 <CheckCircle2 className="w-4 h-4 mr-2" />
                 Uploaded
               </Button>

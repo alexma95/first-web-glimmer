@@ -176,7 +176,7 @@ const Instructions = () => {
           ))}
         </div>
 
-        <Card className="p-5 sm:p-6 mb-6 sm:mb-8 shadow-lg border-primary/20 sticky bottom-4 sm:bottom-6 bg-card/95 backdrop-blur-sm">
+        <Card className="p-5 sm:p-6 shadow-lg border-primary/20 bg-card">
           <div className="mb-4 sm:mb-5">
             <div className="flex items-center justify-between mb-2">
               <p className="text-sm sm:text-base font-semibold text-foreground">
