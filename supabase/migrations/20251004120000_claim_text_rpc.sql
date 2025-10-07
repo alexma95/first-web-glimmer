@@ -1,0 +1,32 @@
+-- Create RPC to claim a text for an assignment atomically
+CREATE OR REPLACE FUNCTION public.claim_text(assignment_id uuid, product_id uuid)
+RETURNS public.texts
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  claimed_text public.texts%ROWTYPE;
+BEGIN
+  SELECT t.*
+  INTO claimed_text
+  FROM public.texts AS t
+  WHERE t.product_id = product_id
+    AND t.is_assigned = false
+  ORDER BY t.option_number
+  FOR UPDATE SKIP LOCKED
+  LIMIT 1;
+
+  IF NOT FOUND THEN
+    RAISE EXCEPTION USING MESSAGE = 'NO_TEXTS_AVAILABLE';
+  END IF;
+
+  UPDATE public.texts
+  SET is_assigned = true
+  WHERE id = claimed_text.id;
+
+  claimed_text.is_assigned := true;
+
+  RETURN claimed_text;
+END;
+$$;
