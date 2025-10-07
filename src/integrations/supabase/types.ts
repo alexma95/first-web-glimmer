@@ -315,6 +315,10 @@ export type Database = {
         Args: { p_email: string; p_product_id: string }
         Returns: string
       }
+      clone_campaign: {
+        Args: { p_campaign_id: string }
+        Returns: string
+      }
     }
     Enums: {
       assignment_status_type:

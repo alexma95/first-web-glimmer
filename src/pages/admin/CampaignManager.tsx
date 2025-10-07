@@ -77,18 +77,8 @@ export function CampaignManager({ adminKey }: CampaignManagerProps) {
 
     setLoading(true);
     try {
-      const { data: newCampaign, error } = await supabase
-        .from("campaigns_new")
-        .insert({
-          name: `${campaign.name} (Copy)`,
-          status: "paused",
-          required_products_count: campaign.required_products_count,
-          welcome_text_md: campaign.welcome_text_md,
-          support_email: campaign.support_email,
-          payment_instructions_md: campaign.payment_instructions_md,
-        })
-        .select()
-        .single();
+      const { data: newCampaignId, error } = await supabase
+        .rpc("clone_campaign", { p_campaign_id: campaign.id });
 
       if (error) {
         console.error("Clone error:", error);
@@ -97,7 +87,7 @@ export function CampaignManager({ adminKey }: CampaignManagerProps) {
 
       toast({
         title: "Success",
-        description: `Campaign cloned! ID: ${newCampaign.id}`,
+        description: `Campaign cloned! ID: ${newCampaignId}`,
       });
 
       loadCampaign();
