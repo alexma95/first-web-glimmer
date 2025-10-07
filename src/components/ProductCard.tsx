@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Copy, ExternalLink, Upload, CheckCircle2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import ReactMarkdown from "react-markdown";
 
 interface ProductCardProps {
   assignment: {
@@ -88,8 +89,8 @@ export function ProductCard({ assignment, uploadedFile, onFileChange, onUpload }
             Pick this review - use it as it is or feel free to write your own:
           </label>
           <div className="relative">
-            <div className="p-4 bg-muted rounded-md border mb-2 max-h-32 overflow-y-auto">
-              <p className="text-sm whitespace-pre-wrap">{assignment.text_snapshot_md}</p>
+            <div className="p-4 bg-muted rounded-md border mb-2 max-h-32 overflow-y-auto prose prose-sm max-w-none">
+              <ReactMarkdown>{assignment.text_snapshot_md}</ReactMarkdown>
             </div>
             <Button
               variant="outline"

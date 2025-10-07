@@ -70,6 +70,44 @@ export function CampaignManager({ adminKey }: CampaignManagerProps) {
     }
   };
 
+  const handleClone = async () => {
+    if (!campaign) return;
+
+    setLoading(true);
+    try {
+      const { data: newCampaign, error } = await supabase
+        .from("campaigns_new")
+        .insert({
+          name: `${campaign.name} (Copy)`,
+          status: "paused",
+          required_products_count: campaign.required_products_count,
+          welcome_text_md: campaign.welcome_text_md,
+          support_email: campaign.support_email,
+          payment_instructions_md: campaign.payment_instructions_md,
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: `Campaign cloned! ID: ${newCampaign.id}`,
+      });
+
+      loadCampaign();
+    } catch (error) {
+      console.error("Error:", error);
+      toast({
+        title: "Error",
+        description: "Failed to clone campaign",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   if (!campaign) {
     return <Card className="p-6"><p>No active campaign found</p></Card>;
   }
@@ -142,9 +180,14 @@ export function CampaignManager({ adminKey }: CampaignManagerProps) {
           />
         </div>
 
-        <Button onClick={handleSave} disabled={loading}>
-          {loading ? "Saving..." : "Save Campaign"}
-        </Button>
+        <div className="flex gap-3">
+          <Button onClick={handleSave} disabled={loading}>
+            {loading ? "Saving..." : "Save Campaign"}
+          </Button>
+          <Button onClick={handleClone} variant="outline" disabled={loading}>
+            Clone Campaign
+          </Button>
+        </div>
       </div>
     </Card>
   );
