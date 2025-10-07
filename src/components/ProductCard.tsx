@@ -107,16 +107,10 @@ export function ProductCard({ assignment, uploadedFile, onFileChange, onUpload }
           <div className="flex gap-2">
             <Input
               type="file"
-              accept="image/jpeg,image/png,image/webp,application/pdf"
+              accept="image/*,.pdf,.heic"
               onChange={(e) => onFileChange(e.target.files?.[0] || null)}
               disabled={!!assignment.proof_file_id}
             />
-            {uploadedFile && !assignment.proof_file_id && (
-              <Button onClick={handleUpload} disabled={uploading}>
-                <Upload className="w-4 h-4 mr-2" />
-                Upload
-              </Button>
-            )}
             {assignment.proof_file_id && (
               <Button disabled variant="outline">
                 <CheckCircle2 className="w-4 h-4 mr-2" />

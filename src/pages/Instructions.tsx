@@ -71,22 +71,19 @@ const Instructions = () => {
     }
   };
 
-  const handleFileChange = (assignmentId: string, file: File | null) => {
-    setUploadedFiles((prev) => {
-      const updated = { ...prev };
-      if (file) {
-        updated[assignmentId] = file;
-      } else {
+  const handleFileChange = async (assignmentId: string, file: File | null) => {
+    if (!file) {
+      setUploadedFiles((prev) => {
+        const updated = { ...prev };
         delete updated[assignmentId];
-      }
-      return updated;
-    });
-  };
+        return updated;
+      });
+      return;
+    }
 
-  const handleUploadProof = async (assignmentId: string) => {
-    const file = uploadedFiles[assignmentId];
-    if (!file) return;
+    setUploadedFiles((prev) => ({ ...prev, [assignmentId]: file }));
 
+    // Auto-upload immediately
     try {
       const fileExt = file.name.split(".").pop();
       const filePath = `${enrollmentId}/${assignmentId}.${fileExt}`;
@@ -125,7 +122,7 @@ const Instructions = () => {
 
       toast({
         title: "Success",
-        description: "Proof uploaded successfully",
+        description: "Proof uploaded automatically",
       });
 
       loadEnrollmentData();
@@ -140,7 +137,6 @@ const Instructions = () => {
   };
 
   const uploadedCount = assignments.filter((a) => a.proof_file_id).length;
-  const allUploaded = assignments.length > 0 && uploadedCount === assignments.length;
   const progressPercent = assignments.length > 0 ? (uploadedCount / assignments.length) * 100 : 0;
 
   if (loading) {
@@ -163,7 +159,7 @@ const Instructions = () => {
               assignment={assignment}
               uploadedFile={uploadedFiles[assignment.id]}
               onFileChange={(file) => handleFileChange(assignment.id, file)}
-              onUpload={() => handleUploadProof(assignment.id)}
+              onUpload={() => {}}
             />
           ))}
         </div>
@@ -171,14 +167,13 @@ const Instructions = () => {
         <Card className="p-6 mb-8">
           <div className="mb-4">
             <p className="text-sm text-muted-foreground mb-2">
-              {uploadedCount} of {assignments.length} proofs uploaded
+              {uploadedCount} of {assignments.length} proofs uploaded (optional)
             </p>
             <Progress value={progressPercent} />
           </div>
 
           <Button
             onClick={() => navigate(`/payment/${enrollmentId}`)}
-            disabled={!allUploaded}
             size="lg"
             className="w-full"
           >

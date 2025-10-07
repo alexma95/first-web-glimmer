@@ -157,24 +157,104 @@ export function EnrollmentsManager({ adminKey }: EnrollmentsManagerProps) {
     }
   };
 
-  const handleExportCSV = () => {
-    const headers = ["Email", "Campaign", "State", "Created At", "Payment Method", "Products Status"];
-    const rows = enrollments.map((e) => [
-      e.email,
-      e.campaigns_new?.name || "",
-      e.state,
-      format(new Date(e.created_at), "yyyy-MM-dd HH:mm"),
-      "-",
-      "-",
-    ]);
+  const handleExportCSV = async () => {
+    try {
+      // Fetch all enrollment data with assignments and payment info
+      const { data: fullData } = await supabase
+        .from("enrollments")
+        .select(`
+          *,
+          campaigns_new(name),
+          assignments:assignments(*, products_new(title, position), files(storage_key)),
+          payment_info(*)
+        `)
+        .order("created_at", { ascending: false });
 
-    const csv = [headers, ...rows].map((row) => row.join(",")).join("\n");
-    const blob = new Blob([csv], { type: "text/csv" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `enrollments-${format(new Date(), "yyyy-MM-dd")}.csv`;
-    a.click();
+      if (!fullData) return;
+
+      const headers = [
+        "Email",
+        "Campaign",
+        "State",
+        "Created At",
+        "Payment Method",
+        "Payment Email",
+        "Full Name",
+        "Bank Account",
+        "Address",
+        "Product 1 Title",
+        "Product 1 Review Text",
+        "Product 1 Status",
+        "Product 1 Proof",
+        "Product 2 Title",
+        "Product 2 Review Text",
+        "Product 2 Status",
+        "Product 2 Proof",
+        "Product 3 Title",
+        "Product 3 Review Text",
+        "Product 3 Status",
+        "Product 3 Proof",
+        "Product 4 Title",
+        "Product 4 Review Text",
+        "Product 4 Status",
+        "Product 4 Proof",
+      ];
+
+      const rows = fullData.map((e: any) => {
+        const sortedAssignments = (e.assignments || []).sort(
+          (a: any, b: any) => (a.products_new?.position || 0) - (b.products_new?.position || 0)
+        );
+
+        const row = [
+          e.email,
+          e.campaigns_new?.name || "",
+          e.state,
+          format(new Date(e.created_at), "yyyy-MM-dd HH:mm"),
+          e.payment_info?.[0]?.method || "",
+          e.payment_info?.[0]?.email || "",
+          e.payment_info?.[0]?.full_name || "",
+          e.payment_info?.[0]?.bank_account_number || "",
+          e.payment_info?.[0]?.address_full || "",
+        ];
+
+        // Add up to 4 products
+        for (let i = 0; i < 4; i++) {
+          const assignment = sortedAssignments[i];
+          if (assignment) {
+            row.push(
+              assignment.products_new?.title || "",
+              assignment.text_snapshot_md || "",
+              assignment.status || "",
+              assignment.files?.storage_key || ""
+            );
+          } else {
+            row.push("", "", "", "");
+          }
+        }
+
+        return row;
+      });
+
+      const csv = [headers, ...rows].map((row) => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(",")).join("\n");
+      const blob = new Blob([csv], { type: "text/csv" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `enrollments-full-${format(new Date(), "yyyy-MM-dd")}.csv`;
+      a.click();
+
+      toast({
+        title: "Success",
+        description: "CSV exported successfully",
+      });
+    } catch (error) {
+      console.error("Error:", error);
+      toast({
+        title: "Error",
+        description: "Failed to export CSV",
+        variant: "destructive",
+      });
+    }
   };
 
   const getStatusBadge = (status: string) => {
@@ -263,6 +343,18 @@ export function EnrollmentsManager({ adminKey }: EnrollmentsManagerProps) {
                           <Badge>{assignment.status}</Badge>
                           {assignment.proof_file_id && (
                             <div className="flex gap-2">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={async () => {
+                                  const { data } = await supabase.storage
+                                    .from("proofs")
+                                    .createSignedUrl(assignment.files.storage_key, 3600);
+                                  if (data?.signedUrl) window.open(data.signedUrl, "_blank");
+                                }}
+                              >
+                                View Proof
+                              </Button>
                               <Button
                                 size="sm"
                                 variant="outline"
