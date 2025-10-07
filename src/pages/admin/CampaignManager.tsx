@@ -7,6 +7,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { Copy, ExternalLink } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 
 interface CampaignManagerProps {
   adminKey: string;
@@ -111,13 +113,76 @@ export function CampaignManager({ adminKey }: CampaignManagerProps) {
     }
   };
 
+  const copyToClipboard = (text: string, label: string) => {
+    navigator.clipboard.writeText(text);
+    toast({
+      title: "Copied!",
+      description: `${label} copied to clipboard`,
+    });
+  };
+
+  const getShareableUrl = () => {
+    return `${window.location.origin}/c/${campaign?.id}`;
+  };
+
   if (!campaign) {
     return <Card className="p-6"><p>No active campaign found</p></Card>;
   }
 
   return (
     <Card className="p-6">
-      <h2 className="text-2xl font-bold mb-6">Campaign Settings</h2>
+      <div className="flex justify-between items-start mb-6">
+        <h2 className="text-2xl font-bold">Campaign Settings</h2>
+        <Badge variant={campaign.status === 'active' ? 'default' : 'secondary'}>
+          {campaign.status}
+        </Badge>
+      </div>
+
+      {/* Campaign ID and URL Section */}
+      <Card className="p-4 mb-6 bg-muted/50">
+        <div className="space-y-3">
+          <div>
+            <Label className="text-xs text-muted-foreground">Campaign ID</Label>
+            <div className="flex items-center gap-2 mt-1">
+              <code className="flex-1 px-3 py-2 bg-background rounded-md text-sm font-mono border">
+                {campaign.id}
+              </code>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => copyToClipboard(campaign.id, "Campaign ID")}
+              >
+                <Copy className="w-4 h-4" />
+              </Button>
+            </div>
+          </div>
+
+          <div>
+            <Label className="text-xs text-muted-foreground">Shareable Landing Page URL</Label>
+            <div className="flex items-center gap-2 mt-1">
+              <code className="flex-1 px-3 py-2 bg-background rounded-md text-sm font-mono border truncate">
+                {getShareableUrl()}
+              </code>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => copyToClipboard(getShareableUrl(), "URL")}
+              >
+                <Copy className="w-4 h-4" />
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                asChild
+              >
+                <a href={getShareableUrl()} target="_blank" rel="noopener noreferrer">
+                  <ExternalLink className="w-4 h-4" />
+                </a>
+              </Button>
+            </div>
+          </div>
+        </div>
+      </Card>
 
       <div className="space-y-6">
         <div className="space-y-2">
