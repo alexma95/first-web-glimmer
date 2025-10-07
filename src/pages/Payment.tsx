@@ -62,6 +62,11 @@ const Payment = () => {
 
       if (updateError) throw updateError;
 
+      // Send notification (fire and forget - don't block user flow)
+      supabase.functions.invoke('notify-submission', {
+        body: { enrollmentId, email: formData.email }
+      }).catch(err => console.error('Notification error:', err));
+
       toast({
         title: "Success",
         description: "Payment information submitted successfully",

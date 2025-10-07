@@ -181,6 +181,7 @@ export function EnrollmentsManager({ adminKey }: EnrollmentsManagerProps) {
         "Payment Email",
         "Full Name",
         "Bank Account",
+        "Bank Details",
         "Address",
         "Product 1 Title",
         "Product 1 Review Text",
@@ -214,6 +215,7 @@ export function EnrollmentsManager({ adminKey }: EnrollmentsManagerProps) {
           e.payment_info?.[0]?.email || "",
           e.payment_info?.[0]?.full_name || "",
           e.payment_info?.[0]?.bank_account_number || "",
+          e.payment_info?.[0]?.bank_details || "",
           e.payment_info?.[0]?.address_full || "",
         ];
 

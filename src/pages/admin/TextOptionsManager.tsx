@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
@@ -19,6 +20,7 @@ export function TextOptionsManager({ adminKey }: TextOptionsManagerProps) {
   const [selectedProductId, setSelectedProductId] = useState<string>("");
   const [textOptions, setTextOptions] = useState<any[]>([]);
   const [bulkText, setBulkText] = useState("");
+  const [separator, setSeparator] = useState<"newline" | "comma">("newline");
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -75,10 +77,9 @@ export function TextOptionsManager({ adminKey }: TextOptionsManagerProps) {
 
     setLoading(true);
     try {
-      const lines = bulkText
-        .split("\n")
-        .map((l) => l.trim())
-        .filter((l) => l.length > 0);
+      const lines = separator === "newline"
+        ? bulkText.split("\n").map((l) => l.trim()).filter((l) => l.length > 0)
+        : bulkText.split(",").map((l) => l.trim()).filter((l) => l.length > 0);
 
       const { data, error } = await supabase.functions.invoke('admin-manage-text-options', {
         body: {
@@ -166,13 +167,33 @@ export function TextOptionsManager({ adminKey }: TextOptionsManagerProps) {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="bulk_text">Bulk Add Text Options (one per line)</Label>
+            <Label>Separator</Label>
+            <RadioGroup value={separator} onValueChange={(v) => setSeparator(v as any)}>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="newline" id="newline" />
+                <Label htmlFor="newline">One per line</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="comma" id="comma" />
+                <Label htmlFor="comma">Comma-separated</Label>
+              </div>
+            </RadioGroup>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="bulk_text">
+              Bulk Add Text Options ({separator === "newline" ? "one per line" : "comma-separated"})
+            </Label>
             <Textarea
               id="bulk_text"
               value={bulkText}
               onChange={(e) => setBulkText(e.target.value)}
               rows={10}
-              placeholder="Paste text options here, one per line..."
+              placeholder={
+                separator === "newline"
+                  ? "Paste text options here, one per line..."
+                  : "Paste text options here, separated by commas..."
+              }
             />
           </div>
 
