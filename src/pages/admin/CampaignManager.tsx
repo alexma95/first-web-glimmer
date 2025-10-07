@@ -9,50 +9,71 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Copy, ExternalLink } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 interface CampaignManagerProps {
   adminKey: string;
 }
 
-export function CampaignManager({ adminKey }: CampaignManagerProps) {
+interface Campaign {
+  id: string;
+  name: string;
+  status: string;
+  support_email: string;
+  required_products_count: number;
+  welcome_text_md: string;
+  payment_instructions_md: string;
+  created_at: string;
+}
+
+export function CampaignManager({ adminKey, onCampaignSelect }: CampaignManagerProps & { onCampaignSelect?: (campaignId: string) => void }) {
   const { toast } = useToast();
-  const [campaign, setCampaign] = useState<any>(null);
+  const [campaigns, setCampaigns] = useState<Campaign[]>([]);
+  const [selectedCampaign, setSelectedCampaign] = useState<Campaign | null>(null);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    loadCampaign();
+    loadCampaigns();
   }, []);
 
-  const loadCampaign = async () => {
+  const loadCampaigns = async () => {
     try {
       const { data } = await supabase
         .from("campaigns_new")
         .select("*")
-        .eq("status", "active")
-        .single();
+        .order("created_at", { ascending: false });
 
-      if (data) setCampaign(data);
+      if (data) {
+        setCampaigns(data);
+        // Auto-select active campaign or first campaign
+        const active = data.find(c => c.status === 'active');
+        const toSelect = active || data[0];
+        if (toSelect) {
+          setSelectedCampaign(toSelect);
+          onCampaignSelect?.(toSelect.id);
+        }
+      }
     } catch (error) {
-      console.error("Error loading campaign:", error);
+      console.error("Error loading campaigns:", error);
     }
   };
 
   const handleSave = async () => {
-    if (!campaign) return;
+    if (!selectedCampaign) return;
 
     setLoading(true);
     try {
       const { error } = await supabase
         .from("campaigns_new")
         .update({
-          name: campaign.name,
-          status: campaign.status,
-          required_products_count: campaign.required_products_count,
-          welcome_text_md: campaign.welcome_text_md,
-          support_email: campaign.support_email,
-          payment_instructions_md: campaign.payment_instructions_md,
+          name: selectedCampaign.name,
+          status: selectedCampaign.status,
+          required_products_count: selectedCampaign.required_products_count,
+          welcome_text_md: selectedCampaign.welcome_text_md,
+          support_email: selectedCampaign.support_email,
+          payment_instructions_md: selectedCampaign.payment_instructions_md,
         })
-        .eq("id", campaign.id);
+        .eq("id", selectedCampaign.id);
 
       if (error) throw error;
 
@@ -60,6 +81,8 @@ export function CampaignManager({ adminKey }: CampaignManagerProps) {
         title: "Success",
         description: "Campaign updated successfully",
       });
+      
+      loadCampaigns();
     } catch (error) {
       console.error("Error:", error);
       toast({
@@ -72,13 +95,48 @@ export function CampaignManager({ adminKey }: CampaignManagerProps) {
     }
   };
 
+  const handleCreate = async () => {
+    setLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from("campaigns_new")
+        .insert({
+          name: "New Campaign",
+          status: "paused",
+          support_email: "prestigiousprepeducation@gmail.com",
+          required_products_count: 4,
+          welcome_text_md: "Default welcome text...",
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "New campaign created",
+      });
+
+      loadCampaigns();
+    } catch (error) {
+      console.error("Error:", error);
+      toast({
+        title: "Error",
+        description: "Failed to create campaign",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleClone = async () => {
-    if (!campaign) return;
+    if (!selectedCampaign) return;
 
     setLoading(true);
     try {
       const { data: newCampaignId, error } = await supabase
-        .rpc("clone_campaign", { p_campaign_id: campaign.id });
+        .rpc("clone_campaign", { p_campaign_id: selectedCampaign.id });
 
       if (error) {
         console.error("Clone error:", error);
@@ -90,7 +148,7 @@ export function CampaignManager({ adminKey }: CampaignManagerProps) {
         description: `Campaign cloned! ID: ${newCampaignId}`,
       });
 
-      loadCampaign();
+      loadCampaigns();
     } catch (error) {
       console.error("Error:", error);
       toast({
@@ -103,6 +161,11 @@ export function CampaignManager({ adminKey }: CampaignManagerProps) {
     }
   };
 
+  const handleSelectCampaign = (campaign: Campaign) => {
+    setSelectedCampaign(campaign);
+    onCampaignSelect?.(campaign.id);
+  };
+
   const copyToClipboard = (text: string, label: string) => {
     navigator.clipboard.writeText(text);
     toast({
@@ -111,142 +174,220 @@ export function CampaignManager({ adminKey }: CampaignManagerProps) {
     });
   };
 
-  const getShareableUrl = () => {
-    return `${window.location.origin}/c/${campaign?.id}`;
+  const getShareableUrl = (campaignId: string) => {
+    return `${window.location.origin}/c/${campaignId}`;
   };
 
-  if (!campaign) {
-    return <Card className="p-6"><p>No active campaign found</p></Card>;
+  if (campaigns.length === 0) {
+    return (
+      <Card className="p-6">
+        <p className="mb-4">No campaigns found</p>
+        <Button onClick={handleCreate}>Create First Campaign</Button>
+      </Card>
+    );
   }
 
   return (
-    <Card className="p-6">
-      <div className="flex justify-between items-start mb-6">
-        <h2 className="text-2xl font-bold">Campaign Settings</h2>
-        <Badge variant={campaign.status === 'active' ? 'default' : 'secondary'}>
-          {campaign.status}
-        </Badge>
-      </div>
-
-      {/* Campaign ID and URL Section */}
-      <Card className="p-4 mb-6 bg-muted/50">
-        <div className="space-y-3">
-          <div>
-            <Label className="text-xs text-muted-foreground">Campaign ID</Label>
-            <div className="flex items-center gap-2 mt-1">
-              <code className="flex-1 px-3 py-2 bg-background rounded-md text-sm font-mono border">
-                {campaign.id}
-              </code>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => copyToClipboard(campaign.id, "Campaign ID")}
-              >
-                <Copy className="w-4 h-4" />
-              </Button>
+    <div className="space-y-6">
+      {/* Currently Editing Banner */}
+      {selectedCampaign && (
+        <Card className="p-4 border-2 border-primary/20 bg-primary/5">
+          <div className="flex justify-between items-start mb-2">
+            <div>
+              <div className="text-xs text-muted-foreground mb-1">Currently Editing</div>
+              <h2 className="text-2xl font-bold">{selectedCampaign.name}</h2>
+            </div>
+            <Badge variant={selectedCampaign.status === 'active' ? 'default' : 'secondary'}>
+              {selectedCampaign.status}
+            </Badge>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
+            <div>
+              <span className="text-muted-foreground">ID:</span>{" "}
+              <code className="text-xs">{selectedCampaign.id.slice(0, 8)}...</code>
+            </div>
+            <div>
+              <span className="text-muted-foreground">Created:</span>{" "}
+              {new Date(selectedCampaign.created_at).toLocaleDateString()}
             </div>
           </div>
+        </Card>
+      )}
 
-          <div>
-            <Label className="text-xs text-muted-foreground">Shareable Landing Page URL</Label>
-            <div className="flex items-center gap-2 mt-1">
-              <code className="flex-1 px-3 py-2 bg-background rounded-md text-sm font-mono border truncate">
-                {getShareableUrl()}
-              </code>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => copyToClipboard(getShareableUrl(), "URL")}
-              >
-                <Copy className="w-4 h-4" />
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                asChild
-              >
-                <a href={getShareableUrl()} target="_blank" rel="noopener noreferrer">
-                  <ExternalLink className="w-4 h-4" />
-                </a>
-              </Button>
-            </div>
-          </div>
+      {/* Campaign List */}
+      <Card className="p-6">
+        <div className="flex justify-between items-center mb-4">
+          <h3 className="text-xl font-bold">All Campaigns</h3>
+          <Button onClick={handleCreate} size="sm" disabled={loading}>
+            Create New
+          </Button>
         </div>
+        
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Name</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead>Products</TableHead>
+              <TableHead>Created</TableHead>
+              <TableHead className="text-right">Action</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {campaigns.map((campaign) => (
+              <TableRow 
+                key={campaign.id}
+                className={selectedCampaign?.id === campaign.id ? "bg-muted/50" : ""}
+              >
+                <TableCell className="font-medium">{campaign.name}</TableCell>
+                <TableCell>
+                  <Badge variant={campaign.status === 'active' ? 'default' : 'secondary'}>
+                    {campaign.status}
+                  </Badge>
+                </TableCell>
+                <TableCell>{campaign.required_products_count}</TableCell>
+                <TableCell>{new Date(campaign.created_at).toLocaleDateString()}</TableCell>
+                <TableCell className="text-right">
+                  <Button
+                    variant={selectedCampaign?.id === campaign.id ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => handleSelectCampaign(campaign)}
+                  >
+                    {selectedCampaign?.id === campaign.id ? "Selected" : "Select"}
+                  </Button>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
       </Card>
 
-      <div className="space-y-6">
-        <div className="space-y-2">
-          <Label htmlFor="name">Campaign Name</Label>
-          <Input
-            id="name"
-            value={campaign.name}
-            onChange={(e) => setCampaign({ ...campaign, name: e.target.value })}
-          />
-        </div>
+      {/* Edit Selected Campaign */}
+      {selectedCampaign && (
+        <Card className="p-6">
+          <h3 className="text-xl font-bold mb-6">Edit Campaign Settings</h3>
 
-        <div className="space-y-2">
-          <Label htmlFor="status">Status</Label>
-          <Select value={campaign.status} onValueChange={(v) => setCampaign({ ...campaign, status: v })}>
-            <SelectTrigger>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="active">Active</SelectItem>
-              <SelectItem value="paused">Paused</SelectItem>
-              <SelectItem value="archived">Archived</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
+          {/* Campaign ID and URL Section */}
+          <Card className="p-4 mb-6 bg-muted/50">
+            <div className="space-y-3">
+              <div>
+                <Label className="text-xs text-muted-foreground">Campaign ID</Label>
+                <div className="flex items-center gap-2 mt-1">
+                  <code className="flex-1 px-3 py-2 bg-background rounded-md text-sm font-mono border">
+                    {selectedCampaign.id}
+                  </code>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => copyToClipboard(selectedCampaign.id, "Campaign ID")}
+                  >
+                    <Copy className="w-4 h-4" />
+                  </Button>
+                </div>
+              </div>
 
-        <div className="space-y-2">
-          <Label htmlFor="support_email">Support Email</Label>
-          <Input
-            id="support_email"
-            type="email"
-            value={campaign.support_email}
-            onChange={(e) => setCampaign({ ...campaign, support_email: e.target.value })}
-          />
-        </div>
+              <div>
+                <Label className="text-xs text-muted-foreground">Shareable Landing Page URL</Label>
+                <div className="flex items-center gap-2 mt-1">
+                  <code className="flex-1 px-3 py-2 bg-background rounded-md text-sm font-mono border truncate">
+                    {getShareableUrl(selectedCampaign.id)}
+                  </code>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => copyToClipboard(getShareableUrl(selectedCampaign.id), "URL")}
+                  >
+                    <Copy className="w-4 h-4" />
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    asChild
+                  >
+                    <a href={getShareableUrl(selectedCampaign.id)} target="_blank" rel="noopener noreferrer">
+                      <ExternalLink className="w-4 h-4" />
+                    </a>
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </Card>
 
-        <div className="space-y-2">
-          <Label htmlFor="required_products_count">Required Products Count</Label>
-          <Input
-            id="required_products_count"
-            type="number"
-            value={campaign.required_products_count}
-            onChange={(e) => setCampaign({ ...campaign, required_products_count: parseInt(e.target.value) })}
-          />
-        </div>
+          <div className="space-y-6">
+            <div className="space-y-2">
+              <Label htmlFor="name">Campaign Name</Label>
+              <Input
+                id="name"
+                value={selectedCampaign.name}
+                onChange={(e) => setSelectedCampaign({ ...selectedCampaign, name: e.target.value })}
+              />
+            </div>
 
-        <div className="space-y-2">
-          <Label htmlFor="welcome_text">Welcome Text (Markdown)</Label>
-          <Textarea
-            id="welcome_text"
-            value={campaign.welcome_text_md}
-            onChange={(e) => setCampaign({ ...campaign, welcome_text_md: e.target.value })}
-            rows={12}
-          />
-        </div>
+            <div className="space-y-2">
+              <Label htmlFor="status">Status</Label>
+              <Select value={selectedCampaign.status} onValueChange={(v) => setSelectedCampaign({ ...selectedCampaign, status: v })}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="active">Active</SelectItem>
+                  <SelectItem value="paused">Paused</SelectItem>
+                  <SelectItem value="archived">Archived</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
 
-        <div className="space-y-2">
-          <Label htmlFor="payment_instructions">Payment Instructions (Markdown)</Label>
-          <Textarea
-            id="payment_instructions"
-            value={campaign.payment_instructions_md || ""}
-            onChange={(e) => setCampaign({ ...campaign, payment_instructions_md: e.target.value })}
-            rows={6}
-          />
-        </div>
+            <div className="space-y-2">
+              <Label htmlFor="support_email">Support Email</Label>
+              <Input
+                id="support_email"
+                type="email"
+                value={selectedCampaign.support_email}
+                onChange={(e) => setSelectedCampaign({ ...selectedCampaign, support_email: e.target.value })}
+              />
+            </div>
 
-        <div className="flex gap-3">
-          <Button onClick={handleSave} disabled={loading}>
-            {loading ? "Saving..." : "Save Campaign"}
-          </Button>
-          <Button onClick={handleClone} variant="outline" disabled={loading}>
-            Clone Campaign
-          </Button>
-        </div>
-      </div>
-    </Card>
+            <div className="space-y-2">
+              <Label htmlFor="required_products_count">Required Products Count</Label>
+              <Input
+                id="required_products_count"
+                type="number"
+                value={selectedCampaign.required_products_count}
+                onChange={(e) => setSelectedCampaign({ ...selectedCampaign, required_products_count: parseInt(e.target.value) })}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="welcome_text">Welcome Text (Markdown)</Label>
+              <Textarea
+                id="welcome_text"
+                value={selectedCampaign.welcome_text_md}
+                onChange={(e) => setSelectedCampaign({ ...selectedCampaign, welcome_text_md: e.target.value })}
+                rows={12}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="payment_instructions">Payment Instructions (Markdown)</Label>
+              <Textarea
+                id="payment_instructions"
+                value={selectedCampaign.payment_instructions_md || ""}
+                onChange={(e) => setSelectedCampaign({ ...selectedCampaign, payment_instructions_md: e.target.value })}
+                rows={6}
+              />
+            </div>
+
+            <div className="flex gap-3">
+              <Button onClick={handleSave} disabled={loading}>
+                {loading ? "Saving..." : "Save Campaign"}
+              </Button>
+              <Button onClick={handleClone} variant="outline" disabled={loading}>
+                Clone Campaign
+              </Button>
+            </div>
+          </div>
+        </Card>
+      )}
+    </div>
   );
 }

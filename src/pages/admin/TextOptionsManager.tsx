@@ -12,9 +12,10 @@ import { supabase } from "@/integrations/supabase/client";
 
 interface TextOptionsManagerProps {
   adminKey: string;
+  campaignId?: string;
 }
 
-export function TextOptionsManager({ adminKey }: TextOptionsManagerProps) {
+export function TextOptionsManager({ adminKey, campaignId }: TextOptionsManagerProps) {
   const { toast } = useToast();
   const [products, setProducts] = useState<any[]>([]);
   const [selectedProductId, setSelectedProductId] = useState<string>("");
@@ -24,8 +25,10 @@ export function TextOptionsManager({ adminKey }: TextOptionsManagerProps) {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    loadProducts();
-  }, []);
+    if (campaignId) {
+      loadProducts();
+    }
+  }, [campaignId]);
 
   useEffect(() => {
     if (selectedProductId) {
@@ -34,24 +37,18 @@ export function TextOptionsManager({ adminKey }: TextOptionsManagerProps) {
   }, [selectedProductId]);
 
   const loadProducts = async () => {
+    if (!campaignId) return;
+    
     try {
-      const { data: campaign } = await supabase
-        .from("campaigns_new")
-        .select("id")
-        .eq("status", "active")
-        .single();
+      const { data } = await supabase
+        .from("products_new")
+        .select("*")
+        .eq("campaign_id", campaignId)
+        .order("position");
 
-      if (campaign) {
-        const { data } = await supabase
-          .from("products_new")
-          .select("*")
-          .eq("campaign_id", campaign.id)
-          .order("position");
-
-        setProducts(data || []);
-        if (data && data.length > 0) {
-          setSelectedProductId(data[0].id);
-        }
+      setProducts(data || []);
+      if (data && data.length > 0) {
+        setSelectedProductId(data[0].id);
       }
     } catch (error) {
       console.error("Error:", error);
@@ -143,6 +140,14 @@ export function TextOptionsManager({ adminKey }: TextOptionsManagerProps) {
       });
     }
   };
+
+  if (!campaignId) {
+    return (
+      <Card className="p-6">
+        <p className="text-muted-foreground">Please select a campaign first</p>
+      </Card>
+    );
+  }
 
   return (
     <div className="space-y-6">

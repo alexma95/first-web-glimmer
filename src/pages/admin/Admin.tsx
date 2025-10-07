@@ -14,6 +14,7 @@ const Admin = () => {
   const [adminKey, setAdminKey] = useState("");
   const [inputKey, setInputKey] = useState("");
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [selectedCampaignId, setSelectedCampaignId] = useState<string>("");
   const { toast } = useToast();
 
   useEffect(() => {
@@ -96,15 +97,24 @@ const Admin = () => {
           </TabsContent>
 
           <TabsContent value="campaign">
-            <CampaignManager adminKey={adminKey} />
+            <CampaignManager 
+              adminKey={adminKey} 
+              onCampaignSelect={setSelectedCampaignId}
+            />
           </TabsContent>
 
           <TabsContent value="products">
-            <ProductsManager adminKey={adminKey} />
+            <ProductsManager 
+              adminKey={adminKey} 
+              campaignId={selectedCampaignId}
+            />
           </TabsContent>
 
           <TabsContent value="texts">
-            <TextOptionsManager adminKey={adminKey} />
+            <TextOptionsManager 
+              adminKey={adminKey} 
+              campaignId={selectedCampaignId}
+            />
           </TabsContent>
 
           <TabsContent value="enrollments">

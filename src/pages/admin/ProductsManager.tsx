@@ -12,38 +12,32 @@ import { Pencil, Trash2, Plus } from "lucide-react";
 
 interface ProductsManagerProps {
   adminKey: string;
+  campaignId?: string;
 }
 
-export function ProductsManager({ adminKey }: ProductsManagerProps) {
+export function ProductsManager({ adminKey, campaignId }: ProductsManagerProps) {
   const { toast } = useToast();
   const [products, setProducts] = useState<any[]>([]);
-  const [campaignId, setCampaignId] = useState<string | null>(null);
   const [editProduct, setEditProduct] = useState<any>(null);
   const [showDialog, setShowDialog] = useState(false);
 
   useEffect(() => {
-    loadProducts();
-  }, []);
+    if (campaignId) {
+      loadProducts();
+    }
+  }, [campaignId]);
 
   const loadProducts = async () => {
+    if (!campaignId) return;
+    
     try {
-      const { data: campaign } = await supabase
-        .from("campaigns_new")
-        .select("id")
-        .eq("status", "active")
-        .single();
+      const { data } = await supabase
+        .from("products_new")
+        .select("*")
+        .eq("campaign_id", campaignId)
+        .order("position");
 
-      if (campaign) {
-        setCampaignId(campaign.id);
-
-        const { data } = await supabase
-          .from("products_new")
-          .select("*")
-          .eq("campaign_id", campaign.id)
-          .order("position");
-
-        setProducts(data || []);
-      }
+      setProducts(data || []);
     } catch (error) {
       console.error("Error:", error);
     }
@@ -123,6 +117,14 @@ export function ProductsManager({ adminKey }: ProductsManagerProps) {
       });
     }
   };
+
+  if (!campaignId) {
+    return (
+      <Card className="p-6">
+        <p className="text-muted-foreground">Please select a campaign first</p>
+      </Card>
+    );
+  }
 
   return (
     <Card className="p-6">
