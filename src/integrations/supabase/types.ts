@@ -25,6 +25,7 @@ export type Database = {
           status: Database["public"]["Enums"]["assignment_status_type"]
           text_option_id: string
           text_snapshot_md: string
+          user_id: string | null
         }
         Insert: {
           created_at?: string
@@ -36,6 +37,7 @@ export type Database = {
           status?: Database["public"]["Enums"]["assignment_status_type"]
           text_option_id: string
           text_snapshot_md: string
+          user_id?: string | null
         }
         Update: {
           created_at?: string
@@ -47,6 +49,7 @@ export type Database = {
           status?: Database["public"]["Enums"]["assignment_status_type"]
           text_option_id?: string
           text_snapshot_md?: string
+          user_id?: string | null
         }
         Relationships: [
           {
@@ -123,6 +126,7 @@ export type Database = {
           id: string
           state: Database["public"]["Enums"]["enrollment_state"]
           updated_at: string
+          user_id: string | null
         }
         Insert: {
           campaign_id: string
@@ -131,6 +135,7 @@ export type Database = {
           id?: string
           state?: Database["public"]["Enums"]["enrollment_state"]
           updated_at?: string
+          user_id?: string | null
         }
         Update: {
           campaign_id?: string
@@ -139,6 +144,7 @@ export type Database = {
           id?: string
           state?: Database["public"]["Enums"]["enrollment_state"]
           updated_at?: string
+          user_id?: string | null
         }
         Relationships: [
           {
