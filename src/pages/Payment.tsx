@@ -86,39 +86,44 @@ const Payment = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5 py-8">
-      <div className="container max-w-2xl mx-auto px-4">
-        <Card className="p-8">
-          <h1 className="text-3xl font-bold mb-2">PAYMENT INFO</h1>
-          <p className="text-muted-foreground mb-6">
-            Select your preferred payment method and enter your details:
+    <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5 py-6 sm:py-8">
+      <div className="container max-w-2xl mx-auto px-4 sm:px-6">
+        <Card className="p-5 sm:p-8 shadow-lg border-primary/20">
+          <h1 className="text-2xl sm:text-3xl font-bold mb-2">Payment Information</h1>
+          <p className="text-sm sm:text-base text-muted-foreground mb-6 sm:mb-8">
+            <strong className="font-semibold">Select your preferred payment method</strong> and enter your details below:
           </p>
 
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <RadioGroup value={method} onValueChange={(v) => setMethod(v as any)}>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="paypal" id="paypal" />
-                <Label htmlFor="paypal">PayPal</Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="wise" id="wise" />
-                <Label htmlFor="wise">Wise</Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="bank_wire" id="bank_wire" />
-                <Label htmlFor="bank_wire">Bank Wire</Label>
-              </div>
-            </RadioGroup>
+          <form onSubmit={handleSubmit} className="space-y-5 sm:space-y-6">
+            <div className="space-y-3 sm:space-y-4">
+              <Label className="text-base font-semibold">Payment Method</Label>
+              <RadioGroup value={method} onValueChange={(v) => setMethod(v as any)}>
+                <div className="flex items-center space-x-3 p-3 sm:p-4 border rounded-lg hover:bg-accent/50 transition-colors">
+                  <RadioGroupItem value="paypal" id="paypal" />
+                  <Label htmlFor="paypal" className="text-sm sm:text-base font-medium cursor-pointer flex-1">PayPal</Label>
+                </div>
+                <div className="flex items-center space-x-3 p-3 sm:p-4 border rounded-lg hover:bg-accent/50 transition-colors">
+                  <RadioGroupItem value="wise" id="wise" />
+                  <Label htmlFor="wise" className="text-sm sm:text-base font-medium cursor-pointer flex-1">Wise</Label>
+                </div>
+                <div className="flex items-center space-x-3 p-3 sm:p-4 border rounded-lg hover:bg-accent/50 transition-colors">
+                  <RadioGroupItem value="bank_wire" id="bank_wire" />
+                  <Label htmlFor="bank_wire" className="text-sm sm:text-base font-medium cursor-pointer flex-1">Bank Wire</Label>
+                </div>
+              </RadioGroup>
+            </div>
 
             {method === "paypal" && (
               <div className="space-y-2">
-                <Label htmlFor="email">Email address required</Label>
+                <Label htmlFor="email" className="text-sm sm:text-base font-semibold">PayPal Email Address</Label>
                 <Input
                   id="email"
                   type="email"
+                  placeholder="your.email@example.com"
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                   required
+                  className="h-10 sm:h-11"
                 />
               </div>
             )}
@@ -126,22 +131,26 @@ const Payment = () => {
             {method === "wise" && (
               <>
                 <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
+                  <Label htmlFor="email" className="text-sm sm:text-base font-semibold">Wise Email</Label>
                   <Input
                     id="email"
                     type="email"
+                    placeholder="your.email@example.com"
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                     required
+                    className="h-10 sm:h-11"
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="fullName">Full name</Label>
+                  <Label htmlFor="fullName" className="text-sm sm:text-base font-semibold">Full Name</Label>
                   <Input
                     id="fullName"
+                    placeholder="John Doe"
                     value={formData.fullName}
                     onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
                     required
+                    className="h-10 sm:h-11"
                   />
                 </div>
               </>
@@ -150,47 +159,54 @@ const Payment = () => {
             {method === "bank_wire" && (
               <>
                 <div className="space-y-2">
-                  <Label htmlFor="fullName">Full name</Label>
+                  <Label htmlFor="fullName" className="text-sm sm:text-base font-semibold">Full Name</Label>
                   <Input
                     id="fullName"
+                    placeholder="John Doe"
                     value={formData.fullName}
                     onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
                     required
+                    className="h-10 sm:h-11"
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="bankAccountNumber">Account number</Label>
+                  <Label htmlFor="bankAccountNumber" className="text-sm sm:text-base font-semibold">Bank Account Number</Label>
                   <Input
                     id="bankAccountNumber"
+                    placeholder="1234567890"
                     value={formData.bankAccountNumber}
                     onChange={(e) => setFormData({ ...formData, bankAccountNumber: e.target.value })}
                     required
+                    className="h-10 sm:h-11"
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="bankDetails">Bank information</Label>
+                  <Label htmlFor="bankDetails" className="text-sm sm:text-base font-semibold">Bank Information</Label>
                   <Textarea
                     id="bankDetails"
                     value={formData.bankDetails}
                     onChange={(e) => setFormData({ ...formData, bankDetails: e.target.value })}
                     required
-                    placeholder="Bank name, routing number, etc."
+                    placeholder="Bank name, routing number, SWIFT code, etc."
+                    className="min-h-[80px] sm:min-h-[100px] text-sm sm:text-base"
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="addressFull">Complete mailing address with postal code</Label>
+                  <Label htmlFor="addressFull" className="text-sm sm:text-base font-semibold">Complete Mailing Address</Label>
                   <Textarea
                     id="addressFull"
                     value={formData.addressFull}
                     onChange={(e) => setFormData({ ...formData, addressFull: e.target.value })}
                     required
+                    placeholder="123 Main St, Apt 4B, City, State, ZIP Code, Country"
+                    className="min-h-[80px] sm:min-h-[100px] text-sm sm:text-base"
                   />
                 </div>
               </>
             )}
 
-            <Button type="submit" size="lg" className="w-full" disabled={loading}>
-              {loading ? "Submitting..." : "Submit Payment Info"}
+            <Button type="submit" size="lg" className="w-full h-11 sm:h-12 text-base font-semibold mt-6 sm:mt-8" disabled={loading}>
+              {loading ? "Submitting..." : "Submit Payment Information"}
             </Button>
           </form>
         </Card>

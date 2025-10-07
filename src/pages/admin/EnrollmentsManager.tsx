@@ -180,9 +180,9 @@ export function EnrollmentsManager({ adminKey }: EnrollmentsManagerProps) {
         "Payment Method",
         "Payment Email",
         "Full Name",
-        "Bank Account",
+        "Bank Account Number",
         "Bank Details",
-        "Address",
+        "Mailing Address",
         "Product 1 Title",
         "Product 1 Review Text",
         "Product 1 Status",
@@ -206,17 +206,22 @@ export function EnrollmentsManager({ adminKey }: EnrollmentsManagerProps) {
           (a: any, b: any) => (a.products_new?.position || 0) - (b.products_new?.position || 0)
         );
 
+        // Get payment info - it's an array, get first element
+        const paymentInfo = Array.isArray(e.payment_info) && e.payment_info.length > 0 
+          ? e.payment_info[0] 
+          : null;
+
         const row = [
           e.email,
           e.campaigns_new?.name || "",
           e.state,
           format(new Date(e.created_at), "yyyy-MM-dd HH:mm"),
-          e.payment_info?.[0]?.method || "",
-          e.payment_info?.[0]?.email || "",
-          e.payment_info?.[0]?.full_name || "",
-          e.payment_info?.[0]?.bank_account_number || "",
-          e.payment_info?.[0]?.bank_details || "",
-          e.payment_info?.[0]?.address_full || "",
+          paymentInfo?.method || "",
+          paymentInfo?.email || "",
+          paymentInfo?.full_name || "",
+          paymentInfo?.bank_account_number || "",
+          paymentInfo?.bank_details || "",
+          paymentInfo?.address_full || "",
         ];
 
         // Add up to 4 products

@@ -7,6 +7,7 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { ProductCard } from "@/components/ProductCard";
 import ReactMarkdown from "react-markdown";
+import { ArrowRight } from "lucide-react";
 
 interface Assignment {
   id: string;
@@ -144,16 +145,27 @@ const Instructions = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5 py-8">
-      <div className="container max-w-4xl mx-auto px-4">
-        <Card className="p-8 mb-8">
-          <div className="prose prose-sm max-w-none">
-            <ReactMarkdown>{welcomeText}</ReactMarkdown>
+    <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5 py-6 sm:py-8">
+      <div className="container max-w-4xl mx-auto px-4 sm:px-6">
+        <Card className="p-5 sm:p-8 mb-6 sm:mb-8 shadow-lg border-primary/20">
+          <h2 className="text-2xl sm:text-3xl font-bold mb-4 sm:mb-6">Instructions</h2>
+          <div className="prose prose-sm sm:prose-base max-w-none text-foreground/90">
+            <ReactMarkdown
+              components={{
+                h1: ({ children }) => <h1 className="text-2xl sm:text-3xl font-bold mb-3 sm:mb-4">{children}</h1>,
+                h2: ({ children }) => <h2 className="text-xl sm:text-2xl font-bold mb-2 sm:mb-3">{children}</h2>,
+                p: ({ children }) => <p className="mb-3 sm:mb-4 text-sm sm:text-base leading-relaxed">{children}</p>,
+                strong: ({ children }) => <strong className="font-bold text-foreground">{children}</strong>,
+                em: ({ children }) => <em className="italic text-foreground/80">{children}</em>,
+              }}
+            >
+              {welcomeText}
+            </ReactMarkdown>
           </div>
         </Card>
 
-        <div className="space-y-6 mb-8">
-          {assignments.map((assignment) => (
+        <div className="space-y-4 sm:space-y-6 mb-6 sm:mb-8">
+          {assignments.map((assignment, index) => (
             <ProductCard
               key={assignment.id}
               assignment={assignment}
@@ -164,20 +176,26 @@ const Instructions = () => {
           ))}
         </div>
 
-        <Card className="p-6 mb-8">
-          <div className="mb-4">
-            <p className="text-sm text-muted-foreground mb-2">
-              {uploadedCount} of {assignments.length} proofs uploaded (optional)
-            </p>
-            <Progress value={progressPercent} />
+        <Card className="p-5 sm:p-6 mb-6 sm:mb-8 shadow-lg border-primary/20 sticky bottom-4 sm:bottom-6 bg-card/95 backdrop-blur-sm">
+          <div className="mb-4 sm:mb-5">
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-sm sm:text-base font-semibold text-foreground">
+                Upload Progress
+              </p>
+              <p className="text-xs sm:text-sm text-muted-foreground font-medium">
+                {uploadedCount} of {assignments.length} completed
+              </p>
+            </div>
+            <Progress value={progressPercent} className="h-2 sm:h-3" />
           </div>
 
           <Button
             onClick={() => navigate(`/payment/${enrollmentId}`)}
             size="lg"
-            className="w-full"
+            className="w-full h-11 sm:h-12 text-base font-semibold"
           >
             Continue to Payment
+            <ArrowRight className="ml-2 h-4 w-4 sm:h-5 sm:w-5" />
           </Button>
         </Card>
       </div>

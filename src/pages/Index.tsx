@@ -1,13 +1,14 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
-import { ArrowRight, Sparkles } from "lucide-react";
+import { ArrowRight, Sparkles, CheckCircle2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
 const Index = () => {
+  const { campaignId } = useParams<{ campaignId?: string }>();
   const [email, setEmail] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
@@ -34,25 +35,44 @@ const Index = () => {
     try {
       const normalizedEmail = email.toLowerCase().trim();
 
-      // Get active campaign
-      const { data: campaigns, error: campaignError } = await supabase
-        .from("campaigns_new")
-        .select("*")
-        .eq("status", "active")
-        .limit(1);
+      // Get campaign - either from URL or first active
+      let campaign;
+      if (campaignId) {
+        const { data, error } = await supabase
+          .from("campaigns_new")
+          .select("*")
+          .eq("id", campaignId)
+          .eq("status", "active")
+          .single();
 
-      if (campaignError) throw campaignError;
+        if (error || !data) {
+          toast({
+            title: "Campaign not found",
+            description: "This campaign is not active or doesn't exist.",
+            variant: "destructive",
+          });
+          return;
+        }
+        campaign = data;
+      } else {
+        const { data: campaigns, error: campaignError } = await supabase
+          .from("campaigns_new")
+          .select("*")
+          .eq("status", "active")
+          .limit(1);
 
-      if (!campaigns || campaigns.length === 0) {
-        toast({
-          title: "No active campaign",
-          description: "There are no active campaigns at the moment. Please check back later.",
-          variant: "destructive",
-        });
-        return;
+        if (campaignError) throw campaignError;
+
+        if (!campaigns || campaigns.length === 0) {
+          toast({
+            title: "No active campaign",
+            description: "There are no active campaigns at the moment. Please check back later.",
+            variant: "destructive",
+          });
+          return;
+        }
+        campaign = campaigns[0];
       }
-
-      const campaign = campaigns[0];
 
       // Check for existing enrollment
       let { data: enrollment, error: enrollmentError } = await supabase
@@ -159,36 +179,66 @@ const Index = () => {
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5">
       <div className="absolute inset-0 bg-gradient-to-t from-primary/10 via-transparent to-transparent pointer-events-none" />
       
-      <div className="container max-w-2xl mx-auto px-4 py-16 relative">
-        <div className="text-center mb-12">
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20 mb-6">
-            <Sparkles className="w-4 h-4 text-primary" />
-            <span className="text-sm font-medium text-foreground">Campaign Text Assignment</span>
+      <div className="container max-w-3xl mx-auto px-4 sm:px-6 py-8 sm:py-16 relative">
+        <div className="text-center mb-8 sm:mb-12">
+          <div className="inline-flex items-center gap-2 px-3 sm:px-4 py-2 rounded-full bg-primary/10 border border-primary/20 mb-4 sm:mb-6">
+            <Sparkles className="w-3 h-3 sm:w-4 sm:h-4 text-primary" />
+            <span className="text-xs sm:text-sm font-medium text-foreground">Campaign Text Assignment</span>
           </div>
           
-          <h1 className="text-5xl font-bold mb-4 bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
-            Quick & Easy Book Gig - Earn $8-10 in 3 minutes or less
+          <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4 sm:mb-6 leading-tight px-4">
+            <span className="block mb-2">Quick & Easy</span>
+            <span className="block text-primary italic">Book Review Gig</span>
+            <span className="block text-2xl sm:text-3xl md:text-4xl mt-3">Earn $8-10 in 3 Minutes</span>
           </h1>
           
-          <p className="text-lg text-muted-foreground max-w-md mx-auto">
-            Insert your email to enroll
-          </p>
+          <div className="max-w-xl mx-auto space-y-3 sm:space-y-4 mb-6 sm:mb-8 px-4">
+            <div className="flex items-start gap-3 text-left">
+              <CheckCircle2 className="w-5 h-5 sm:w-6 sm:h-6 text-primary flex-shrink-0 mt-0.5" />
+              <p className="text-sm sm:text-base text-muted-foreground">
+                <strong className="text-foreground font-semibold">Download books</strong> or read summaries (your choice)
+              </p>
+            </div>
+            <div className="flex items-start gap-3 text-left">
+              <CheckCircle2 className="w-5 h-5 sm:w-6 sm:h-6 text-primary flex-shrink-0 mt-0.5" />
+              <p className="text-sm sm:text-base text-muted-foreground">
+                <strong className="text-foreground font-semibold">Write reviews</strong> on Amazon with provided text
+              </p>
+            </div>
+            <div className="flex items-start gap-3 text-left">
+              <CheckCircle2 className="w-5 h-5 sm:w-6 sm:h-6 text-primary flex-shrink-0 mt-0.5" />
+              <p className="text-sm sm:text-base text-muted-foreground">
+                <strong className="text-foreground font-semibold">Submit screenshots</strong> and payment info
+              </p>
+            </div>
+            <div className="flex items-start gap-3 text-left">
+              <CheckCircle2 className="w-5 h-5 sm:w-6 sm:h-6 text-primary flex-shrink-0 mt-0.5" />
+              <p className="text-sm sm:text-base text-muted-foreground">
+                <strong className="text-foreground font-semibold">Get paid within 2 business days</strong> (often immediately)
+              </p>
+            </div>
+          </div>
         </div>
 
-        <Card className="p-8 backdrop-blur-sm bg-card/50 border-primary/10">
-          <form onSubmit={handleSubmit} className="space-y-6">
+        <Card className="p-6 sm:p-8 backdrop-blur-sm bg-card border-primary/20 shadow-xl">
+          <h2 className="text-xl sm:text-2xl font-bold mb-2 text-center">Start Earning Now</h2>
+          <p className="text-sm sm:text-base text-muted-foreground text-center mb-6">
+            Enter your email to get your unique text assignments
+          </p>
+          
+          <form onSubmit={handleSubmit} className="space-y-5 sm:space-y-6">
             <div className="space-y-2">
-              <label htmlFor="email" className="text-sm font-medium text-foreground">
+              <label htmlFor="email" className="text-sm font-semibold text-foreground block">
                 Email Address
               </label>
               <Input
                 id="email"
                 type="email"
-                placeholder="you@example.com"
+                placeholder="your.email@example.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                className="h-12 text-base"
+                className="h-11 sm:h-12 text-base"
                 disabled={isLoading}
               />
             </div>
@@ -196,23 +246,23 @@ const Index = () => {
             <Button
               type="submit"
               size="lg"
-              className="w-full h-12 text-base font-medium"
+              className="w-full h-11 sm:h-12 text-base font-semibold"
               disabled={isLoading}
             >
               {isLoading ? (
                 "Creating assignment..."
               ) : (
                 <>
-                  Get My Texts
-                  <ArrowRight className="ml-2 h-5 w-5" />
+                  Get My Assignments
+                  <ArrowRight className="ml-2 h-4 w-4 sm:h-5 sm:w-5" />
                 </>
               )}
             </Button>
           </form>
         </Card>
 
-        <p className="text-center text-sm text-muted-foreground mt-8">
-          Each email receives unique text assignments that are immediately reserved for you
+        <p className="text-center text-xs sm:text-sm text-muted-foreground mt-6 sm:mt-8 px-4 italic">
+          Each email receives unique text assignments reserved just for you
         </p>
       </div>
     </div>
