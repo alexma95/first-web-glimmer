@@ -80,7 +80,7 @@ const Assignment = () => {
       setAssignmentTexts(transformedTexts);
       
       // Track which texts have been copied
-      const copied = new Set(
+      const copied = new Set<string>(
         transformedTexts
           .filter((t: AssignmentText) => t.copied_at)
           .map((t: AssignmentText) => t.id)
