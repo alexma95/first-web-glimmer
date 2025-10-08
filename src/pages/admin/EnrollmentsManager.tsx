@@ -6,7 +6,8 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Eye, Download } from "lucide-react";
+import { Eye, Download, Filter } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { format } from "date-fns";
 
 interface EnrollmentsManagerProps {
@@ -18,17 +19,39 @@ export function EnrollmentsManager({ adminKey }: EnrollmentsManagerProps) {
   const [enrollments, setEnrollments] = useState<any[]>([]);
   const [selectedEnrollment, setSelectedEnrollment] = useState<any>(null);
   const [showDetail, setShowDetail] = useState(false);
+  const [campaigns, setCampaigns] = useState<any[]>([]);
+  const [selectedCampaign, setSelectedCampaign] = useState<string>("all");
 
   useEffect(() => {
+    loadCampaigns();
     loadEnrollments();
   }, []);
 
-  const loadEnrollments = async () => {
+  const loadCampaigns = async () => {
     try {
       const { data } = await supabase
+        .from("campaigns_new")
+        .select("id, name")
+        .order("name");
+
+      setCampaigns(data || []);
+    } catch (error) {
+      console.error("Error:", error);
+    }
+  };
+
+  const loadEnrollments = async () => {
+    try {
+      let query = supabase
         .from("enrollments")
-        .select("*, campaigns_new(name)")
+        .select("*, campaigns_new(name, id)")
         .order("created_at", { ascending: false });
+
+      if (selectedCampaign !== "all") {
+        query = query.eq("campaign_id", selectedCampaign);
+      }
+
+      const { data } = await query;
 
       setEnrollments(data || []);
     } catch (error) {
@@ -279,12 +302,31 @@ export function EnrollmentsManager({ adminKey }: EnrollmentsManagerProps) {
   return (
     <div className="space-y-6">
       <Card className="p-6">
-        <div className="flex justify-between items-center mb-6">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
           <h2 className="text-2xl font-bold">Enrollments ({enrollments.length})</h2>
-          <Button onClick={handleExportCSV}>
-            <Download className="w-4 h-4 mr-2" />
-            Export CSV
-          </Button>
+          <div className="flex gap-2 w-full sm:w-auto">
+            <Select value={selectedCampaign} onValueChange={(value) => {
+              setSelectedCampaign(value);
+              setTimeout(() => loadEnrollments(), 0);
+            }}>
+              <SelectTrigger className="w-full sm:w-[250px]">
+                <Filter className="w-4 h-4 mr-2" />
+                <SelectValue placeholder="Filter by campaign" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Campaigns</SelectItem>
+                {campaigns.map((campaign) => (
+                  <SelectItem key={campaign.id} value={campaign.id}>
+                    {campaign.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Button onClick={handleExportCSV}>
+              <Download className="w-4 h-4 mr-2" />
+              Export
+            </Button>
+          </div>
         </div>
 
         <div className="max-h-[600px] overflow-y-auto">

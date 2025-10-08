@@ -11,6 +11,7 @@ const corsHeaders = {
 interface NotificationRequest {
   enrollmentId: string;
   email: string;
+  campaignName?: string;
 }
 
 const handler = async (req: Request): Promise<Response> => {
@@ -20,7 +21,7 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    const { enrollmentId, email }: NotificationRequest = await req.json();
+    const { enrollmentId, email, campaignName }: NotificationRequest = await req.json();
 
     console.log('Sending notification for enrollment:', enrollmentId);
 
@@ -33,10 +34,11 @@ const handler = async (req: Request): Promise<Response> => {
       body: JSON.stringify({
         from: 'Campaign Notifications <onboarding@resend.dev>',
         to: [ADMIN_EMAIL],
-        subject: '🔔 New Submission Received',
+        subject: `🔔 New Submission - ${campaignName || 'Campaign'}`,
         html: `
           <h2>New Submission Alert</h2>
           <p>A new submission has been received.</p>
+          ${campaignName ? `<p><strong>Campaign:</strong> ${campaignName}</p>` : ''}
           <p><strong>Email:</strong> ${email}</p>
           <p><strong>Enrollment ID:</strong> ${enrollmentId}</p>
           <p>Please review the submission in your admin panel.</p>

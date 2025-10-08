@@ -62,9 +62,20 @@ const Payment = () => {
 
       if (updateError) throw updateError;
 
+      // Get campaign name for notification
+      const { data: enrollment } = await supabase
+        .from("enrollments")
+        .select("campaigns_new(name)")
+        .eq("id", enrollmentId)
+        .single();
+
       // Send notification (fire and forget - don't block user flow)
       supabase.functions.invoke('notify-submission', {
-        body: { enrollmentId, email: formData.email }
+        body: { 
+          enrollmentId, 
+          email: formData.email,
+          campaignName: enrollment?.campaigns_new?.name
+        }
       }).catch(err => console.error('Notification error:', err));
 
       toast({
