@@ -227,6 +227,38 @@ export type Database = {
           },
         ]
       }
+      payment_records: {
+        Row: {
+          created_at: string
+          enrollment_id: string
+          id: string
+          notes: string | null
+          paid_at: string
+        }
+        Insert: {
+          created_at?: string
+          enrollment_id: string
+          id?: string
+          notes?: string | null
+          paid_at?: string
+        }
+        Update: {
+          created_at?: string
+          enrollment_id?: string
+          id?: string
+          notes?: string | null
+          paid_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payment_records_enrollment_id_fkey"
+            columns: ["enrollment_id"]
+            isOneToOne: false
+            referencedRelation: "enrollments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       product_text_options: {
         Row: {
           assigned_at: string | null

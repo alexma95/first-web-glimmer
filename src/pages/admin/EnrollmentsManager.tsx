@@ -6,8 +6,10 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Eye, Download, Filter } from "lucide-react";
+import { Eye, Download, Filter, Copy, CheckCircle } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 import { format } from "date-fns";
 
 interface EnrollmentsManagerProps {
@@ -21,6 +23,8 @@ export function EnrollmentsManager({ adminKey }: EnrollmentsManagerProps) {
   const [showDetail, setShowDetail] = useState(false);
   const [campaigns, setCampaigns] = useState<any[]>([]);
   const [selectedCampaign, setSelectedCampaign] = useState<string>("all");
+  const [paymentNotes, setPaymentNotes] = useState("");
+  const [paymentFilter, setPaymentFilter] = useState<string>("all");
 
   useEffect(() => {
     loadCampaigns();
@@ -28,7 +32,7 @@ export function EnrollmentsManager({ adminKey }: EnrollmentsManagerProps) {
 
   useEffect(() => {
     loadEnrollments();
-  }, [selectedCampaign]);
+  }, [selectedCampaign, paymentFilter]);
 
   const loadCampaigns = async () => {
     try {
@@ -47,7 +51,11 @@ export function EnrollmentsManager({ adminKey }: EnrollmentsManagerProps) {
     try {
       let query = supabase
         .from("enrollments")
-        .select("*, campaigns_new(name, id)")
+        .select(`
+          *, 
+          campaigns_new(name, id),
+          payment_records(paid_at, notes)
+        `)
         .order("created_at", { ascending: false });
 
       if (selectedCampaign !== "all") {
@@ -56,7 +64,15 @@ export function EnrollmentsManager({ adminKey }: EnrollmentsManagerProps) {
 
       const { data } = await query;
 
-      setEnrollments(data || []);
+      // Apply payment filter
+      let filteredData = data || [];
+      if (paymentFilter === "paid") {
+        filteredData = filteredData.filter(e => e.payment_records && e.payment_records.length > 0);
+      } else if (paymentFilter === "unpaid") {
+        filteredData = filteredData.filter(e => !e.payment_records || e.payment_records.length === 0);
+      }
+
+      setEnrollments(filteredData);
     } catch (error) {
       console.error("Error:", error);
     }
@@ -81,10 +97,17 @@ export function EnrollmentsManager({ adminKey }: EnrollmentsManagerProps) {
         .eq("enrollment_id", enrollmentId)
         .maybeSingle();
 
+      const { data: paymentRecords } = await supabase
+        .from("payment_records")
+        .select("*")
+        .eq("enrollment_id", enrollmentId)
+        .order("paid_at", { ascending: false });
+
       setSelectedEnrollment({
         ...enrollment,
         assignments: assignments || [],
         payment,
+        paymentRecords: paymentRecords || [],
       });
 
       setShowDetail(true);
@@ -157,18 +180,30 @@ export function EnrollmentsManager({ adminKey }: EnrollmentsManagerProps) {
 
   const handleMarkPaid = async (enrollmentId: string) => {
     try {
-      const { error } = await supabase
+      // Insert payment record with optional notes
+      const { error: recordError } = await supabase
+        .from("payment_records")
+        .insert({
+          enrollment_id: enrollmentId,
+          notes: paymentNotes.trim() || null,
+        });
+
+      if (recordError) throw recordError;
+
+      // Update enrollment state
+      const { error: stateError } = await supabase
         .from("enrollments")
         .update({ state: "paid" })
         .eq("id", enrollmentId);
 
-      if (error) throw error;
+      if (stateError) throw stateError;
 
       toast({
         title: "Success",
         description: "Marked as paid",
       });
 
+      setPaymentNotes("");
       loadEnrollments();
       if (selectedEnrollment) {
         loadEnrollmentDetail(enrollmentId);
@@ -181,6 +216,14 @@ export function EnrollmentsManager({ adminKey }: EnrollmentsManagerProps) {
         variant: "destructive",
       });
     }
+  };
+
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text);
+    toast({
+      title: "Copied!",
+      description: "Email copied to clipboard",
+    });
   };
 
   const handleExportCSV = async () => {
@@ -307,9 +350,9 @@ export function EnrollmentsManager({ adminKey }: EnrollmentsManagerProps) {
       <Card className="p-6">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
           <h2 className="text-2xl font-bold">Enrollments ({enrollments.length})</h2>
-          <div className="flex gap-2 w-full sm:w-auto">
+          <div className="flex gap-2 w-full sm:w-auto flex-wrap">
             <Select value={selectedCampaign} onValueChange={setSelectedCampaign}>
-              <SelectTrigger className="w-full sm:w-[250px]">
+              <SelectTrigger className="w-full sm:w-[200px]">
                 <Filter className="w-4 h-4 mr-2" />
                 <SelectValue placeholder="Filter by campaign" />
               </SelectTrigger>
@@ -320,6 +363,17 @@ export function EnrollmentsManager({ adminKey }: EnrollmentsManagerProps) {
                     {campaign.name}
                   </SelectItem>
                 ))}
+              </SelectContent>
+            </Select>
+            <Select value={paymentFilter} onValueChange={setPaymentFilter}>
+              <SelectTrigger className="w-full sm:w-[150px]">
+                <CheckCircle className="w-4 h-4 mr-2" />
+                <SelectValue placeholder="Payment status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Payments</SelectItem>
+                <SelectItem value="paid">Paid</SelectItem>
+                <SelectItem value="unpaid">Unpaid</SelectItem>
               </SelectContent>
             </Select>
             <Button onClick={handleExportCSV}>
@@ -336,28 +390,62 @@ export function EnrollmentsManager({ adminKey }: EnrollmentsManagerProps) {
                 <TableHead>Email</TableHead>
                 <TableHead>Campaign</TableHead>
                 <TableHead>State</TableHead>
+                <TableHead>Payment</TableHead>
                 <TableHead>Created At</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {enrollments.map((enrollment) => (
-                <TableRow key={enrollment.id}>
-                  <TableCell>{enrollment.email}</TableCell>
-                  <TableCell>{enrollment.campaigns_new?.name || "-"}</TableCell>
-                  <TableCell>{getStatusBadge(enrollment.state)}</TableCell>
-                  <TableCell>{format(new Date(enrollment.created_at), "yyyy-MM-dd HH:mm")}</TableCell>
-                  <TableCell className="text-right">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => loadEnrollmentDetail(enrollment.id)}
-                    >
-                      <Eye className="w-4 h-4" />
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))}
+              {enrollments.map((enrollment) => {
+                const isPaid = enrollment.payment_records && enrollment.payment_records.length > 0;
+                const latestPayment = isPaid ? enrollment.payment_records[0] : null;
+                
+                return (
+                  <TableRow key={enrollment.id}>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        {enrollment.email}
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => copyToClipboard(enrollment.email)}
+                        >
+                          <Copy className="w-3 h-3" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                    <TableCell>{enrollment.campaigns_new?.name || "-"}</TableCell>
+                    <TableCell>{getStatusBadge(enrollment.state)}</TableCell>
+                    <TableCell>
+                      {isPaid ? (
+                        <div className="text-sm">
+                          <Badge variant="default" className="mb-1">
+                            <CheckCircle className="w-3 h-3 mr-1" />
+                            Paid
+                          </Badge>
+                          {latestPayment?.paid_at && (
+                            <div className="text-xs text-muted-foreground">
+                              {format(new Date(latestPayment.paid_at), "MMM d, yyyy")}
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <Badge variant="secondary">Unpaid</Badge>
+                      )}
+                    </TableCell>
+                    <TableCell>{format(new Date(enrollment.created_at), "yyyy-MM-dd HH:mm")}</TableCell>
+                    <TableCell className="text-right">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => loadEnrollmentDetail(enrollment.id)}
+                      >
+                        <Eye className="w-4 h-4" />
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
             </TableBody>
           </Table>
         </div>
@@ -436,22 +524,78 @@ export function EnrollmentsManager({ adminKey }: EnrollmentsManagerProps) {
                 <div>
                   <h3 className="font-bold mb-2">Payment Information</h3>
                   <Card className="p-4">
-                    <p><strong>Method:</strong> {selectedEnrollment.payment.method}</p>
-                    {selectedEnrollment.payment.email && (
-                      <p><strong>Email:</strong> {selectedEnrollment.payment.email}</p>
-                    )}
-                    {selectedEnrollment.payment.full_name && (
-                      <p><strong>Name:</strong> {selectedEnrollment.payment.full_name}</p>
-                    )}
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <p><strong>Method:</strong> {selectedEnrollment.payment.method}</p>
+                      </div>
+                      {selectedEnrollment.payment.email && (
+                        <div className="flex items-center justify-between">
+                          <p><strong>Email:</strong> {selectedEnrollment.payment.email}</p>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => copyToClipboard(selectedEnrollment.payment.email)}
+                          >
+                            <Copy className="w-4 h-4 mr-2" />
+                            Copy Email
+                          </Button>
+                        </div>
+                      )}
+                      {selectedEnrollment.payment.full_name && (
+                        <p><strong>Name:</strong> {selectedEnrollment.payment.full_name}</p>
+                      )}
+                    </div>
                   </Card>
                 </div>
               )}
 
-              <div className="flex gap-2">
+              {selectedEnrollment.paymentRecords && selectedEnrollment.paymentRecords.length > 0 && (
+                <div>
+                  <h3 className="font-bold mb-2">Payment History</h3>
+                  <div className="space-y-2">
+                    {selectedEnrollment.paymentRecords.map((record: any) => (
+                      <Card key={record.id} className="p-4">
+                        <div className="flex items-start justify-between">
+                          <div>
+                            <p className="font-semibold text-sm">
+                              Paid on {format(new Date(record.paid_at), "PPP 'at' p")}
+                            </p>
+                            {record.notes && (
+                              <p className="text-sm text-muted-foreground mt-1">
+                                Note: {record.notes}
+                              </p>
+                            )}
+                          </div>
+                          <Badge variant="default">
+                            <CheckCircle className="w-3 h-3 mr-1" />
+                            Paid
+                          </Badge>
+                        </div>
+                      </Card>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="payment-notes">Payment Notes (Optional)</Label>
+                  <Textarea
+                    id="payment-notes"
+                    placeholder="e.g., Paid from PayPal account john@example.com"
+                    value={paymentNotes}
+                    onChange={(e) => setPaymentNotes(e.target.value)}
+                    className="mt-2"
+                  />
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Add notes about which PayPal account was used or any other payment details
+                  </p>
+                </div>
                 <Button
                   onClick={() => handleMarkPaid(selectedEnrollment.id)}
-                  disabled={selectedEnrollment.state === "paid"}
+                  disabled={selectedEnrollment.paymentRecords && selectedEnrollment.paymentRecords.length > 0}
                 >
+                  <CheckCircle className="w-4 h-4 mr-2" />
                   Mark as Paid
                 </Button>
               </div>
