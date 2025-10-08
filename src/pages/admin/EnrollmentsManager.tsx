@@ -24,8 +24,11 @@ export function EnrollmentsManager({ adminKey }: EnrollmentsManagerProps) {
 
   useEffect(() => {
     loadCampaigns();
-    loadEnrollments();
   }, []);
+
+  useEffect(() => {
+    loadEnrollments();
+  }, [selectedCampaign]);
 
   const loadCampaigns = async () => {
     try {
@@ -305,10 +308,7 @@ export function EnrollmentsManager({ adminKey }: EnrollmentsManagerProps) {
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
           <h2 className="text-2xl font-bold">Enrollments ({enrollments.length})</h2>
           <div className="flex gap-2 w-full sm:w-auto">
-            <Select value={selectedCampaign} onValueChange={(value) => {
-              setSelectedCampaign(value);
-              setTimeout(() => loadEnrollments(), 0);
-            }}>
+            <Select value={selectedCampaign} onValueChange={setSelectedCampaign}>
               <SelectTrigger className="w-full sm:w-[250px]">
                 <Filter className="w-4 h-4 mr-2" />
                 <SelectValue placeholder="Filter by campaign" />
