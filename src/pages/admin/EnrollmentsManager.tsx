@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Eye, Download, Filter, Copy, CheckCircle } from "lucide-react";
+import { Eye, Download, Filter, Copy, CheckCircle, Trash2 } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
@@ -213,6 +213,35 @@ export function EnrollmentsManager({ adminKey }: EnrollmentsManagerProps) {
       toast({
         title: "Error",
         description: "Failed to mark as paid",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDeleteAssignment = async (assignmentId: string) => {
+    if (!confirm("Are you sure you want to delete this assignment?")) return;
+
+    try {
+      const { error } = await supabase
+        .from("assignments")
+        .delete()
+        .eq("id", assignmentId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Assignment deleted",
+      });
+
+      if (selectedEnrollment) {
+        loadEnrollmentDetail(selectedEnrollment.id);
+      }
+    } catch (error) {
+      console.error("Error:", error);
+      toast({
+        title: "Error",
+        description: "Failed to delete assignment",
         variant: "destructive",
       });
     }
@@ -472,7 +501,16 @@ export function EnrollmentsManager({ adminKey }: EnrollmentsManagerProps) {
                   {selectedEnrollment.assignments.map((assignment: any) => (
                     <Card key={assignment.id} className="p-4">
                       <div className="space-y-2">
-                        <h4 className="font-semibold">{assignment.products_new.title}</h4>
+                        <div className="flex items-center justify-between">
+                          <h4 className="font-semibold">{assignment.products_new.title}</h4>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => handleDeleteAssignment(assignment.id)}
+                          >
+                            <Trash2 className="w-4 h-4 text-destructive" />
+                          </Button>
+                        </div>
                         <p className="text-sm bg-muted p-2 rounded">
                           {assignment.text_snapshot_md}
                         </p>
