@@ -218,6 +218,42 @@ export function EnrollmentsManager({ adminKey }: EnrollmentsManagerProps) {
     }
   };
 
+  const handleDeleteEnrollment = async (enrollmentId: string, email: string) => {
+    if (!confirm(`Are you sure you want to permanently delete the enrollment for ${email}?\n\nThis will delete:\n- The enrollment\n- All assignments\n- Payment information\n- Payment records\n\nThis action cannot be undone.`)) {
+      return;
+    }
+
+    try {
+      // Delete related data first
+      await supabase.from("assignments").delete().eq("enrollment_id", enrollmentId);
+      await supabase.from("payment_info").delete().eq("enrollment_id", enrollmentId);
+      await supabase.from("payment_records").delete().eq("enrollment_id", enrollmentId);
+      
+      // Delete the enrollment
+      const { error } = await supabase
+        .from("enrollments")
+        .delete()
+        .eq("id", enrollmentId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Enrollment and all related data deleted",
+      });
+
+      loadEnrollments();
+      setShowDetail(false);
+    } catch (error) {
+      console.error("Error:", error);
+      toast({
+        title: "Error",
+        description: "Failed to delete enrollment",
+        variant: "destructive",
+      });
+    }
+  };
+
   const handleDeleteAssignment = async (assignmentId: string) => {
     if (!confirm("Are you sure you want to delete this assignment?")) return;
 
@@ -464,13 +500,22 @@ export function EnrollmentsManager({ adminKey }: EnrollmentsManagerProps) {
                     </TableCell>
                     <TableCell>{format(new Date(enrollment.created_at), "yyyy-MM-dd HH:mm")}</TableCell>
                     <TableCell className="text-right">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => loadEnrollmentDetail(enrollment.id)}
-                      >
-                        <Eye className="w-4 h-4" />
-                      </Button>
+                      <div className="flex gap-1 justify-end">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => loadEnrollmentDetail(enrollment.id)}
+                        >
+                          <Eye className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleDeleteEnrollment(enrollment.id, enrollment.email)}
+                        >
+                          <Trash2 className="w-4 h-4 text-destructive" />
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 );
