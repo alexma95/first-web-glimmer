@@ -12,6 +12,7 @@ import { ArrowRight } from "lucide-react";
 interface Assignment {
   id: string;
   product_id: string;
+  text_option_id: string;
   text_snapshot_md: string;
   status: string;
   proof_file_id: string | null;
@@ -59,7 +60,25 @@ const Instructions = () => {
 
       if (assignmentsError) throw assignmentsError;
 
-      setAssignments(assignmentsData || []);
+      // For assignments with empty text snapshots, fetch current text options
+      const enrichedAssignments = await Promise.all(
+        (assignmentsData || []).map(async (assignment) => {
+          if (!assignment.text_snapshot_md || assignment.text_snapshot_md.trim() === '') {
+            const { data: textOption } = await supabase
+              .from("product_text_options")
+              .select("text_md")
+              .eq("id", assignment.text_option_id)
+              .single();
+            
+            if (textOption) {
+              return { ...assignment, text_snapshot_md: textOption.text_md };
+            }
+          }
+          return assignment;
+        })
+      );
+
+      setAssignments(enrichedAssignments);
     } catch (error) {
       console.error("Error:", error);
       toast({
