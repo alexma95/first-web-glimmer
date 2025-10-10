@@ -84,21 +84,22 @@ const Index = () => {
 
       if (enrollmentError) throw enrollmentError;
 
+      // Get products for this campaign
+      const { data: products, error: productsError } = await supabase
+        .from("products_new")
+        .select("*")
+        .eq("campaign_id", campaign.id)
+        .eq("status", "active")
+        .order("position");
+
+      if (productsError) throw productsError;
+
+      if (!products || products.length === 0) {
+        throw new Error("No products found for this campaign");
+      }
+
       if (!enrollment) {
-        // Get products for this campaign first
-        const { data: products, error: productsError } = await supabase
-          .from("products_new")
-          .select("*")
-          .eq("campaign_id", campaign.id)
-          .eq("status", "active")
-          .order("position");
-
-        if (productsError) throw productsError;
-
-        if (!products || products.length === 0) {
-          throw new Error("No products found for this campaign");
-        }
-
+        // New enrollment flow
         // Check text option availability for all products BEFORE creating enrollment
         const textAvailability = [];
         for (const product of products) {
@@ -201,6 +202,59 @@ const Index = () => {
               })),
             },
           });
+        }
+      } else {
+        // Existing enrollment - check and update empty assignments
+        const { data: existingAssignments } = await supabase
+          .from("assignments")
+          .select("*")
+          .eq("enrollment_id", enrollment.id);
+
+        for (const product of products) {
+          const existingAssignment = existingAssignments?.find(a => a.product_id === product.id);
+          
+          // If assignment exists but has empty text, update it with a new text option
+          if (existingAssignment && (!existingAssignment.text_snapshot_md || existingAssignment.text_snapshot_md.trim() === '')) {
+            // Release the old text option if it exists
+            if (existingAssignment.text_option_id) {
+              await supabase
+                .from("product_text_options")
+                .update({ status: 'available', assigned_to_email: null, assigned_at: null })
+                .eq("id", existingAssignment.text_option_id);
+            }
+
+            // Claim a new text option
+            const { data: textId, error: claimError } = await supabase.rpc(
+              "claim_text_option",
+              {
+                p_product_id: product.id,
+                p_email: normalizedEmail,
+              }
+            );
+
+            if (claimError || !textId) {
+              console.warn(`No texts available for product ${product.title}`);
+              continue;
+            }
+
+            // Get the text content
+            const { data: textOption } = await supabase
+              .from("product_text_options")
+              .select("text_md")
+              .eq("id", textId)
+              .single();
+
+            if (textOption) {
+              // Update assignment with new text
+              await supabase
+                .from("assignments")
+                .update({
+                  text_option_id: textId,
+                  text_snapshot_md: textOption.text_md,
+                })
+                .eq("id", existingAssignment.id);
+            }
+          }
         }
       }
 
