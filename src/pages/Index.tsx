@@ -204,17 +204,24 @@ const Index = () => {
           });
         }
       } else {
-        // Existing enrollment - check and update empty assignments
+        // Existing enrollment - ALWAYS refresh assignments to get latest text options
+        console.log('Existing enrollment found, refreshing assignments...');
+        
         const { data: existingAssignments } = await supabase
           .from("assignments")
           .select("*")
           .eq("enrollment_id", enrollment.id);
 
+        console.log('Existing assignments:', existingAssignments);
+
+        let updatedCount = 0;
         for (const product of products) {
           const existingAssignment = existingAssignments?.find(a => a.product_id === product.id);
           
           // If assignment exists but has empty text, update it with a new text option
           if (existingAssignment && (!existingAssignment.text_snapshot_md || existingAssignment.text_snapshot_md.trim() === '')) {
+            console.log(`Updating empty assignment for product: ${product.title}`);
+            
             // Release the old text option if it exists
             if (existingAssignment.text_option_id) {
               await supabase
@@ -233,9 +240,11 @@ const Index = () => {
             );
 
             if (claimError || !textId) {
-              console.warn(`No texts available for product ${product.title}`);
+              console.warn(`No texts available for product ${product.title}`, claimError);
               continue;
             }
+
+            console.log(`Claimed new text option: ${textId}`);
 
             // Get the text content
             const { data: textOption } = await supabase
@@ -246,15 +255,29 @@ const Index = () => {
 
             if (textOption) {
               // Update assignment with new text
-              await supabase
+              const { error: updateError } = await supabase
                 .from("assignments")
                 .update({
                   text_option_id: textId,
                   text_snapshot_md: textOption.text_md,
                 })
                 .eq("id", existingAssignment.id);
+
+              if (updateError) {
+                console.error('Error updating assignment:', updateError);
+              } else {
+                updatedCount++;
+                console.log(`Successfully updated assignment for ${product.title}`);
+              }
             }
           }
+        }
+
+        if (updatedCount > 0) {
+          toast({
+            title: "Assignments Updated",
+            description: `${updatedCount} assignment(s) refreshed with new text options`,
+          });
         }
       }
 

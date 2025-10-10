@@ -40,7 +40,9 @@ const Instructions = () => {
     if (!enrollmentId) return;
 
     try {
-      // Get enrollment with campaign
+      console.log('Loading enrollment data for:', enrollmentId);
+      
+      // Get enrollment with campaign - DISABLE CACHE
       const { data: enrollment, error: enrollmentError } = await supabase
         .from("enrollments")
         .select("*, campaigns_new(*)")
@@ -51,7 +53,7 @@ const Instructions = () => {
 
       setWelcomeText(enrollment.campaigns_new.welcome_text_md);
 
-      // Get assignments with products
+      // Get assignments with products - FORCE FRESH DATA
       const { data: assignmentsData, error: assignmentsError } = await supabase
         .from("assignments")
         .select("*, products_new(*)")
@@ -60,24 +62,33 @@ const Instructions = () => {
 
       if (assignmentsError) throw assignmentsError;
 
+      console.log('Raw assignments loaded:', assignmentsData);
+
       // For assignments with empty text snapshots, fetch current text options
       const enrichedAssignments = await Promise.all(
         (assignmentsData || []).map(async (assignment) => {
           if (!assignment.text_snapshot_md || assignment.text_snapshot_md.trim() === '') {
-            const { data: textOption } = await supabase
-              .from("product_text_options")
-              .select("text_md")
-              .eq("id", assignment.text_option_id)
-              .single();
+            console.log('Empty text found for assignment:', assignment.id, 'text_option_id:', assignment.text_option_id);
             
-            if (textOption) {
-              return { ...assignment, text_snapshot_md: textOption.text_md };
+            if (assignment.text_option_id) {
+              const { data: textOption, error: textError } = await supabase
+                .from("product_text_options")
+                .select("text_md")
+                .eq("id", assignment.text_option_id)
+                .single();
+              
+              console.log('Fetched text option:', textOption, 'error:', textError);
+              
+              if (textOption && textOption.text_md) {
+                return { ...assignment, text_snapshot_md: textOption.text_md };
+              }
             }
           }
           return assignment;
         })
       );
 
+      console.log('Enriched assignments:', enrichedAssignments);
       setAssignments(enrichedAssignments);
     } catch (error) {
       console.error("Error:", error);
