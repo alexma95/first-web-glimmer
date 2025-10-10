@@ -258,8 +258,8 @@ const Index = () => {
         }
       }
 
-      // Navigate to instructions
-      navigate(`/instructions/${enrollment.id}`);
+      // Navigate to instructions with timestamp to force refresh
+      navigate(`/instructions/${enrollment.id}?t=${Date.now()}`);
     } catch (error) {
       console.error("Error:", error);
       toast({

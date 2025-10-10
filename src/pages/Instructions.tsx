@@ -34,7 +34,7 @@ const Instructions = () => {
 
   useEffect(() => {
     loadEnrollmentData();
-  }, [enrollmentId]);
+  }, [enrollmentId, window.location.search]); // Force reload on URL change
 
   const loadEnrollmentData = async () => {
     if (!enrollmentId) return;
