@@ -9,9 +9,15 @@ const corsHeaders = {
 };
 
 interface NotificationRequest {
-  enrollmentId: string;
-  email: string;
+  type?: string;
+  enrollmentId?: string;
+  email?: string;
   campaignName?: string;
+  campaignId?: string;
+  lowStockProducts?: Array<{
+    productTitle: string;
+    remainingCount: number;
+  }>;
 }
 
 const handler = async (req: Request): Promise<Response> => {
@@ -21,9 +27,44 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    const { enrollmentId, email, campaignName }: NotificationRequest = await req.json();
+    const { type, enrollmentId, email, campaignName, campaignId, lowStockProducts }: NotificationRequest = await req.json();
 
-    console.log('Sending notification for enrollment:', enrollmentId);
+    console.log('Sending notification:', { type, enrollmentId, campaignId });
+
+    let emailSubject = '';
+    let emailHtml = '';
+
+    if (type === 'low_stock') {
+      // Low stock warning notification
+      const productsList = lowStockProducts?.map(p => 
+        `<li><strong>${p.productTitle}</strong>: ${p.remainingCount} text option${p.remainingCount === 1 ? '' : 's'} remaining</li>`
+      ).join('');
+
+      emailSubject = `⚠️ LOW STOCK ALERT - ${campaignName || 'Campaign'}`;
+      emailHtml = `
+        <h2 style="color: #dc2626;">⚠️ Text Options Running Low!</h2>
+        <p><strong>Campaign:</strong> ${campaignName || 'Unknown'}</p>
+        <p>The following products are running low on available text options:</p>
+        <ul style="color: #dc2626; font-weight: bold;">
+          ${productsList}
+        </ul>
+        <p>Please add more text options to prevent users from being unable to enroll.</p>
+        <p style="margin-top: 20px; padding: 10px; background-color: #fef2f2; border-left: 4px solid #dc2626;">
+          <strong>Action Required:</strong> Add more text options for these products in the admin panel.
+        </p>
+      `;
+    } else {
+      // Default: New submission notification
+      emailSubject = `🔔 New Submission - ${campaignName || 'Campaign'}`;
+      emailHtml = `
+        <h2>New Submission Alert</h2>
+        <p>A new submission has been received.</p>
+        ${campaignName ? `<p><strong>Campaign:</strong> ${campaignName}</p>` : ''}
+        <p><strong>Email:</strong> ${email}</p>
+        <p><strong>Enrollment ID:</strong> ${enrollmentId}</p>
+        <p>Please review the submission in your admin panel.</p>
+      `;
+    }
 
     const emailResponse = await fetch('https://api.resend.com/emails', {
       method: 'POST',
@@ -34,15 +75,8 @@ const handler = async (req: Request): Promise<Response> => {
       body: JSON.stringify({
         from: 'Campaign Notifications <onboarding@resend.dev>',
         to: [ADMIN_EMAIL],
-        subject: `🔔 New Submission - ${campaignName || 'Campaign'}`,
-        html: `
-          <h2>New Submission Alert</h2>
-          <p>A new submission has been received.</p>
-          ${campaignName ? `<p><strong>Campaign:</strong> ${campaignName}</p>` : ''}
-          <p><strong>Email:</strong> ${email}</p>
-          <p><strong>Enrollment ID:</strong> ${enrollmentId}</p>
-          <p>Please review the submission in your admin panel.</p>
-        `,
+        subject: emailSubject,
+        html: emailHtml,
       }),
     });
 

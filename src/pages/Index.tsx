@@ -85,6 +85,46 @@ const Index = () => {
       if (enrollmentError) throw enrollmentError;
 
       if (!enrollment) {
+        // Get products for this campaign first
+        const { data: products, error: productsError } = await supabase
+          .from("products_new")
+          .select("*")
+          .eq("campaign_id", campaign.id)
+          .eq("status", "active")
+          .order("position");
+
+        if (productsError) throw productsError;
+
+        if (!products || products.length === 0) {
+          throw new Error("No products found for this campaign");
+        }
+
+        // Check text option availability for all products BEFORE creating enrollment
+        const textAvailability = [];
+        for (const product of products) {
+          const { count } = await supabase
+            .from("product_text_options")
+            .select("*", { count: "exact", head: true })
+            .eq("product_id", product.id)
+            .eq("status", "available");
+          
+          textAvailability.push({ product, count: count || 0 });
+        }
+
+        // Check if any product has no available texts
+        const outOfStock = textAvailability.filter(item => item.count === 0);
+        if (outOfStock.length > 0) {
+          toast({
+            title: "Gig Completed",
+            description: "Sorry! All slots for this campaign have been filled. All submissions have been received and the gig is now closed. Please check back later for new opportunities.",
+            variant: "destructive",
+          });
+          return;
+        }
+
+        // Check if any product is running low (less than 5 available)
+        const lowStock = textAvailability.filter(item => item.count < 5 && item.count > 0);
+        
         // Create new enrollment
         const { data: newEnrollment, error: createError } = await supabase
           .from("enrollments")
@@ -100,21 +140,8 @@ const Index = () => {
         if (createError) throw createError;
         enrollment = newEnrollment;
 
-        // Get products for this campaign
-        const { data: products, error: productsError } = await supabase
-          .from("products_new")
-          .select("*")
-          .eq("campaign_id", campaign.id)
-          .eq("status", "active")
-          .order("position");
-
-        if (productsError) throw productsError;
-
-        if (!products || products.length === 0) {
-          throw new Error("No products found for this campaign");
-        }
-
         // Assign texts for each product
+        let assignedCount = 0;
         for (const product of products) {
           // Check if assignment already exists
           const { data: existingAssignment } = await supabase
@@ -156,8 +183,24 @@ const Index = () => {
                 status: "assigned",
                 user_id: null,
               });
+              assignedCount++;
             }
           }
+        }
+
+        // Send notification if text options are running low
+        if (lowStock.length > 0) {
+          await supabase.functions.invoke("notify-submission", {
+            body: {
+              type: "low_stock",
+              campaignName: campaign.name,
+              campaignId: campaign.id,
+              lowStockProducts: lowStock.map(item => ({
+                productTitle: item.product.title,
+                remainingCount: item.count,
+              })),
+            },
+          });
         }
       }
 
