@@ -79,8 +79,8 @@ const Payment = () => {
       }).catch(err => console.error('Notification error:', err));
 
       toast({
-        title: "Success",
-        description: "Payment information submitted successfully",
+        title: "✅ Thank you!",
+        description: "Your payment information has been received. Expect your payout within 24–48 hours.",
       });
 
       navigate(`/confirmation/${enrollmentId}`);
@@ -100,9 +100,9 @@ const Payment = () => {
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5 py-6 sm:py-8">
       <div className="container max-w-2xl mx-auto px-4 sm:px-6">
         <Card className="p-5 sm:p-8 shadow-lg border-primary/20">
-          <h1 className="text-2xl sm:text-3xl font-bold mb-2">Payment Information</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold mb-2">Final Step — Get Paid Fast</h1>
           <p className="text-sm sm:text-base text-muted-foreground mb-6 sm:mb-8">
-            <strong className="font-semibold">Select your preferred payment method</strong> and enter your details below:
+            Choose your preferred payment method below. Most reviewers receive payment within 24 hours of proof approval.
           </p>
 
           <form onSubmit={handleSubmit} className="space-y-5 sm:space-y-6">
@@ -115,7 +115,7 @@ const Payment = () => {
                 </div>
                 <div className="flex items-center space-x-3 p-3 sm:p-4 border rounded-lg hover:bg-accent/50 transition-colors">
                   <RadioGroupItem value="wise" id="wise" />
-                  <Label htmlFor="wise" className="text-sm sm:text-base font-medium cursor-pointer flex-1">Wise</Label>
+                  <Label htmlFor="wise" className="text-sm sm:text-base font-medium cursor-pointer flex-1">Wise <span className="text-xs text-muted-foreground">[preferred]</span></Label>
                 </div>
                 <div className="flex items-center space-x-3 p-3 sm:p-4 border rounded-lg hover:bg-accent/50 transition-colors">
                   <RadioGroupItem value="bank_wire" id="bank_wire" />
@@ -125,24 +125,24 @@ const Payment = () => {
             </div>
 
             {method === "paypal" && (
-              <div className="space-y-2">
-                <Label htmlFor="email" className="text-sm sm:text-base font-semibold">PayPal Email Address</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="your.email@example.com"
-                  value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  required
-                  className="h-10 sm:h-11"
-                />
-              </div>
+                <div className="space-y-2">
+                  <Label htmlFor="email" className="text-sm sm:text-base font-semibold">Enter your PayPal email address</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="your.email@example.com"
+                    value={formData.email}
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    required
+                    className="h-10 sm:h-11"
+                  />
+                </div>
             )}
 
             {method === "wise" && (
               <>
                 <div className="space-y-2">
-                  <Label htmlFor="email" className="text-sm sm:text-base font-semibold">Wise Email</Label>
+                  <Label htmlFor="email" className="text-sm sm:text-base font-semibold">Enter your Wise email address</Label>
                   <Input
                     id="email"
                     type="email"
@@ -217,8 +217,16 @@ const Payment = () => {
             )}
 
             <Button type="submit" size="lg" className="w-full h-11 sm:h-12 text-base font-semibold mt-6 sm:mt-8" disabled={loading}>
-              {loading ? "Submitting..." : "Submit Payment Information"}
+              {loading ? "Submitting..." : "Confirm My Payment →"}
             </Button>
+            
+            <p className="text-xs sm:text-sm text-muted-foreground text-center mt-3">
+              Your payment info is used only for payouts — we never store or share your data.
+            </p>
+            
+            <p className="text-sm sm:text-base font-semibold text-center mt-4">
+              ⚡ Fast payments — most reviewers are paid same day!
+            </p>
           </form>
         </Card>
       </div>

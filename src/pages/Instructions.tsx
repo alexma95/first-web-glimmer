@@ -178,19 +178,59 @@ const Instructions = () => {
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5 py-6 sm:py-8">
       <div className="container max-w-4xl mx-auto px-4 sm:px-6">
         <Card className="p-5 sm:p-8 mb-6 sm:mb-8 shadow-lg border-primary/20">
-          <h2 className="text-2xl sm:text-3xl font-bold mb-4 sm:mb-6">Instructions</h2>
-          <div className="prose prose-sm sm:prose-base max-w-none text-foreground/90">
-            <ReactMarkdown
-              components={{
-                h1: ({ children }) => <h1 className="text-2xl sm:text-3xl font-bold mb-3 sm:mb-4">{children}</h1>,
-                h2: ({ children }) => <h2 className="text-xl sm:text-2xl font-bold mb-2 sm:mb-3">{children}</h2>,
-                p: ({ children }) => <p className="mb-3 sm:mb-4 text-sm sm:text-base leading-relaxed">{children}</p>,
-                strong: ({ children }) => <strong className="font-bold text-foreground">{children}</strong>,
-                em: ({ children }) => <em className="italic text-foreground/80">{children}</em>,
-              }}
-            >
-              {welcomeText}
-            </ReactMarkdown>
+          <h2 className="text-2xl sm:text-3xl font-bold mb-4 sm:mb-6">Your First Book Review Gig — Takes Less Than 5 Minutes</h2>
+          <p className="text-sm sm:text-base text-muted-foreground mb-6">
+            You'll get quick, book-specific AI-generated review examples to help you write faster and avoid creative blocks.
+            These examples are built using AI models that analyze the book's description and tone, you can use them as-is or personalize them.
+          </p>
+          
+          <div className="space-y-4 mb-6">
+            <div className="flex items-start gap-3">
+              <span className="font-bold text-lg">1️⃣</span>
+              <p className="text-sm sm:text-base">Download the book or its summary (you can skim or read as much as you like).</p>
+            </div>
+            <div className="flex items-start gap-3">
+              <span className="font-bold text-lg">2️⃣</span>
+              <div>
+                <p className="text-sm sm:text-base mb-2">Write your review:</p>
+                <ul className="list-disc list-inside space-y-1 ml-4 text-sm sm:text-base text-muted-foreground">
+                  <li>Use your own words, or</li>
+                  <li>Copy or adapt one of the AI-generated examples provided.</li>
+                </ul>
+              </div>
+            </div>
+            <div className="flex items-start gap-3">
+              <span className="font-bold text-lg">3️⃣</span>
+              <p className="text-sm sm:text-base">Click the provided Amazon link to publish your review.</p>
+            </div>
+            <div className="flex items-start gap-3">
+              <span className="font-bold text-lg">4️⃣</span>
+              <p className="text-sm sm:text-base">Take a screenshot of your published review or confirmation email.</p>
+            </div>
+            <div className="flex items-start gap-3">
+              <span className="font-bold text-lg">5️⃣</span>
+              <p className="text-sm sm:text-base">Upload your proof and complete your payment details to receive your payout.</p>
+            </div>
+          </div>
+
+          <div className="border-t pt-4 mt-6">
+            <p className="font-semibold mb-2">⭐ Important Note</p>
+            <p className="text-sm sm:text-base text-muted-foreground mb-2">
+              If something doesn't work as expected or you have any questions, just contact us — we'll get back to you quickly.
+            </p>
+            <p className="text-sm sm:text-base">
+              📧 Support: <a href="mailto:prestigiousprepeducation@gmail.com" className="text-primary hover:underline">prestigiousprepeducation@gmail.com</a>
+            </p>
+          </div>
+
+          <div className="border-t pt-4 mt-6">
+            <p className="font-semibold mb-2">💵 Payment Info</p>
+            <p className="text-sm sm:text-base text-muted-foreground mb-2">
+              Payments are processed within 24–48 hours (often same-day).
+            </p>
+            <p className="text-sm sm:text-base text-muted-foreground">
+              You can receive your payment via PayPal, Wise, or Bank Transfer.
+            </p>
           </div>
         </Card>
 
@@ -224,9 +264,13 @@ const Instructions = () => {
             size="lg"
             className="w-full h-11 sm:h-12 text-base font-semibold"
           >
-            Continue to Payment
+            Submit Proof & Get Paid
             <ArrowRight className="ml-2 h-4 w-4 sm:h-5 sm:w-5" />
           </Button>
+          
+          <p className="text-xs sm:text-sm text-muted-foreground text-center mt-3">
+            Submitting proof unlocks your first $5–$10 payment.
+          </p>
         </Card>
       </div>
     </div>

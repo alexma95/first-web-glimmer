@@ -304,15 +304,42 @@ const Index = () => {
           <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4 sm:mb-6 leading-tight px-4">
             <span className="block mb-2">Quick & Easy</span>
             <span className="block text-primary italic">Book Review Gig</span>
-            <span className="block text-2xl sm:text-3xl md:text-4xl mt-3">Earn $8-10 in 3 Minutes</span>
           </h1>
+          <p className="text-xl sm:text-2xl md:text-3xl font-semibold mb-6 px-4">
+            Earn $5–$10 in under 5 minutes by sharing your opinions about books.
+          </p>
+          <p className="text-base sm:text-lg text-muted-foreground px-4">
+            No experience required.
+          </p>
           
+          <div className="mt-8 space-y-3 text-left max-w-2xl mx-auto px-4">
+            <div className="flex items-start gap-3">
+              <span className="text-primary mt-1">✔</span>
+              <p className="text-sm sm:text-base">Takes less than 5 minutes from start to finish</p>
+            </div>
+            <div className="flex items-start gap-3">
+              <span className="text-primary mt-1">✔</span>
+              <p className="text-sm sm:text-base">Get AI-generated review examples based on each book's text, use them for inspiration or to overcome creative blocks, or just use them as they are.</p>
+            </div>
+            <div className="flex items-start gap-3">
+              <span className="text-primary mt-1">✔</span>
+              <p className="text-sm sm:text-base">Fast payouts via PayPal, Wise, or Bank Transfer</p>
+            </div>
+            <div className="flex items-start gap-3">
+              <span className="text-primary mt-1">✔</span>
+              <p className="text-sm sm:text-base">No reading obligation, you can review summaries or excerpts</p>
+            </div>
+            <div className="flex items-start gap-3">
+              <span className="text-primary mt-1">✔</span>
+              <p className="text-sm sm:text-base">Used by independent authors to gather feedback</p>
+            </div>
+          </div>
         </div>
 
         <Card className="p-6 sm:p-8 backdrop-blur-sm bg-card border-primary/20 shadow-xl">
           <h2 className="text-xl sm:text-2xl font-bold mb-2 text-center">Start Earning Now</h2>
           <p className="text-sm sm:text-base text-muted-foreground text-center mb-6">
-            Enter your email to get your unique text assignments
+            Enter your email to receive your first book review gig and AI review examples customized for that book.
           </p>
           
           <form onSubmit={handleSubmit} className="space-y-5 sm:space-y-6">
@@ -323,7 +350,7 @@ const Index = () => {
               <Input
                 id="email"
                 type="email"
-                placeholder="your.email@example.com"
+                placeholder="your@email.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
@@ -342,7 +369,7 @@ const Index = () => {
                 "Creating assignment..."
               ) : (
                 <>
-                  Join Now
+                  Get My First $5–$10 Gig
                   <ArrowRight className="ml-2 h-4 w-4 sm:h-5 sm:w-5" />
                 </>
               )}
@@ -350,8 +377,12 @@ const Index = () => {
           </form>
         </Card>
 
-        <p className="text-center text-xs sm:text-sm text-muted-foreground mt-6 sm:mt-8 px-4 italic">
-          Each email receives unique text assignments reserved just for you
+        <p className="text-center text-xs sm:text-sm text-muted-foreground mt-6 sm:mt-8 px-4">
+          Each reviewer gets unique assignments and AI-generated examples tailored to the book. Limited spots available this week.
+        </p>
+        
+        <p className="text-center text-sm sm:text-base font-semibold mt-4 px-4">
+          ⭐ 1,000+ reviewers — fast, safe, and simple.
         </p>
       </div>
     </div>
