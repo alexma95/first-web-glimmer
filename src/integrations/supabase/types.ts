@@ -348,7 +348,9 @@ export type Database = {
         Returns: string
       }
       clone_campaign: {
-        Args: { p_campaign_id: string }
+        Args:
+          | { p_campaign_id: string }
+          | { p_campaign_id: string; p_clone_products?: boolean }
         Returns: string
       }
     }
