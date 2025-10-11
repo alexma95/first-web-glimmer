@@ -7,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Copy, ExternalLink } from "lucide-react";
+import { Copy, ExternalLink, Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
@@ -130,13 +130,16 @@ export function CampaignManager({ adminKey, onCampaignSelect }: CampaignManagerP
     }
   };
 
-  const handleClone = async () => {
+  const handleClone = async (cloneProducts: boolean = true) => {
     if (!selectedCampaign) return;
 
     setLoading(true);
     try {
       const { data: newCampaignId, error } = await supabase
-        .rpc("clone_campaign", { p_campaign_id: selectedCampaign.id });
+        .rpc("clone_campaign", { 
+          p_campaign_id: selectedCampaign.id,
+          p_clone_products: cloneProducts 
+        });
 
       if (error) {
         console.error("Clone error:", error);
@@ -145,7 +148,7 @@ export function CampaignManager({ adminKey, onCampaignSelect }: CampaignManagerP
 
       toast({
         title: "Success",
-        description: `Campaign cloned! ID: ${newCampaignId}`,
+        description: `Campaign cloned${cloneProducts ? ' with products' : ''}!`,
       });
 
       loadCampaigns();
@@ -154,6 +157,41 @@ export function CampaignManager({ adminKey, onCampaignSelect }: CampaignManagerP
       toast({
         title: "Error",
         description: "Failed to clone campaign",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!selectedCampaign) return;
+    
+    if (!confirm(`Are you sure you want to delete "${selectedCampaign.name}"? This action cannot be undone.`)) {
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const { error } = await supabase
+        .from("campaigns_new")
+        .delete()
+        .eq("id", selectedCampaign.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Campaign deleted successfully",
+      });
+
+      setSelectedCampaign(null);
+      loadCampaigns();
+    } catch (error) {
+      console.error("Error:", error);
+      toast({
+        title: "Error",
+        description: "Failed to delete campaign",
         variant: "destructive",
       });
     } finally {
@@ -377,12 +415,19 @@ export function CampaignManager({ adminKey, onCampaignSelect }: CampaignManagerP
               />
             </div>
 
-            <div className="flex gap-3">
+            <div className="flex gap-3 flex-wrap">
               <Button onClick={handleSave} disabled={loading}>
                 {loading ? "Saving..." : "Save Campaign"}
               </Button>
-              <Button onClick={handleClone} variant="outline" disabled={loading}>
-                Clone Campaign
+              <Button onClick={() => handleClone(true)} variant="outline" disabled={loading}>
+                Clone with Products
+              </Button>
+              <Button onClick={() => handleClone(false)} variant="outline" disabled={loading}>
+                Clone without Products
+              </Button>
+              <Button onClick={handleDelete} variant="destructive" disabled={loading}>
+                <Trash2 className="w-4 h-4 mr-2" />
+                Delete Campaign
               </Button>
             </div>
           </div>
