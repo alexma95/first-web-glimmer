@@ -54,7 +54,9 @@ export function EnrollmentsManager({ adminKey }: EnrollmentsManagerProps) {
         .select(`
           *, 
           campaigns_new(name, id),
-          payment_records(paid_at, notes)
+          payment_records(paid_at, notes),
+          assignments(submitted_at, proof_file_id, files(storage_key, mime_type)),
+          payment_info(method, email, full_name)
         `)
         .order("created_at", { ascending: false });
 
@@ -71,6 +73,25 @@ export function EnrollmentsManager({ adminKey }: EnrollmentsManagerProps) {
       } else if (paymentFilter === "unpaid") {
         filteredData = filteredData.filter(e => !e.payment_records || e.payment_records.length === 0);
       }
+
+      // Sort by submission time (prioritize submitted assignments)
+      filteredData.sort((a, b) => {
+        const aSubmitted = a.assignments?.some((asn: any) => asn.submitted_at);
+        const bSubmitted = b.assignments?.some((asn: any) => asn.submitted_at);
+        
+        if (aSubmitted && !bSubmitted) return -1;
+        if (!aSubmitted && bSubmitted) return 1;
+        
+        // Both submitted or both not submitted - compare latest submission time or created_at
+        const aTime = aSubmitted 
+          ? Math.max(...a.assignments.filter((asn: any) => asn.submitted_at).map((asn: any) => new Date(asn.submitted_at).getTime()))
+          : new Date(a.created_at).getTime();
+        const bTime = bSubmitted
+          ? Math.max(...b.assignments.filter((asn: any) => asn.submitted_at).map((asn: any) => new Date(asn.submitted_at).getTime()))
+          : new Date(b.created_at).getTime();
+        
+        return bTime - aTime; // Most recent first
+      });
 
       setEnrollments(filteredData);
     } catch (error) {
@@ -455,8 +476,9 @@ export function EnrollmentsManager({ adminKey }: EnrollmentsManagerProps) {
                 <TableHead>Email</TableHead>
                 <TableHead>Campaign</TableHead>
                 <TableHead>State</TableHead>
-                <TableHead>Payment</TableHead>
-                <TableHead>Created At</TableHead>
+                <TableHead>Payment Info</TableHead>
+                <TableHead>Proofs</TableHead>
+                <TableHead>Timestamps</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
@@ -464,6 +486,17 @@ export function EnrollmentsManager({ adminKey }: EnrollmentsManagerProps) {
               {enrollments.map((enrollment) => {
                 const isPaid = enrollment.payment_records && enrollment.payment_records.length > 0;
                 const latestPayment = isPaid ? enrollment.payment_records[0] : null;
+                const paymentInfo = Array.isArray(enrollment.payment_info) && enrollment.payment_info.length > 0 
+                  ? enrollment.payment_info[0] 
+                  : null;
+                const assignments = enrollment.assignments || [];
+                const proofsWithFiles = assignments.filter((a: any) => a.proof_file_id && a.files);
+                const submittedAssignments = assignments.filter((a: any) => a.submitted_at);
+                const latestSubmission = submittedAssignments.length > 0
+                  ? submittedAssignments.reduce((latest: any, current: any) => 
+                      new Date(current.submitted_at) > new Date(latest.submitted_at) ? current : latest
+                    )
+                  : null;
                 
                 return (
                   <TableRow key={enrollment.id}>
@@ -482,23 +515,88 @@ export function EnrollmentsManager({ adminKey }: EnrollmentsManagerProps) {
                     <TableCell>{enrollment.campaigns_new?.name || "-"}</TableCell>
                     <TableCell>{getStatusBadge(enrollment.state)}</TableCell>
                     <TableCell>
-                      {isPaid ? (
-                        <div className="text-sm">
+                      <div className="space-y-1">
+                        {isPaid ? (
                           <Badge variant="default" className="mb-1">
                             <CheckCircle className="w-3 h-3 mr-1" />
                             Paid
                           </Badge>
-                          {latestPayment?.paid_at && (
-                            <div className="text-xs text-muted-foreground">
-                              {format(new Date(latestPayment.paid_at), "MMM d, yyyy")}
-                            </div>
-                          )}
+                        ) : (
+                          <Badge variant="secondary">Unpaid</Badge>
+                        )}
+                        {paymentInfo && (
+                          <div className="text-xs space-y-0.5">
+                            <div><strong>{paymentInfo.method}</strong></div>
+                            {paymentInfo.email && (
+                              <div className="flex items-center gap-1">
+                                {paymentInfo.email}
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-4 w-4 p-0"
+                                  onClick={() => copyToClipboard(paymentInfo.email)}
+                                >
+                                  <Copy className="w-2.5 h-2.5" />
+                                </Button>
+                              </div>
+                            )}
+                            {paymentInfo.full_name && (
+                              <div className="text-muted-foreground">{paymentInfo.full_name}</div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      {proofsWithFiles.length > 0 ? (
+                        <div className="flex gap-1 flex-wrap">
+                          {proofsWithFiles.map((assignment: any, idx: number) => (
+                            <button
+                              key={assignment.id}
+                              onClick={async () => {
+                                const { data } = await supabase.storage
+                                  .from("proofs")
+                                  .createSignedUrl(assignment.files.storage_key, 3600);
+                                if (data?.signedUrl) window.open(data.signedUrl, "_blank");
+                              }}
+                              className="relative group"
+                            >
+                              {assignment.files.mime_type?.startsWith('image/') ? (
+                                <img
+                                  src={`${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/proofs/${assignment.files.storage_key}`}
+                                  alt={`Proof ${idx + 1}`}
+                                  className="w-12 h-12 object-cover rounded border hover:border-primary cursor-pointer"
+                                  onError={(e) => {
+                                    // Fallback for non-public images - show placeholder
+                                    e.currentTarget.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="48" height="48"%3E%3Crect width="48" height="48" fill="%23ddd"/%3E%3Ctext x="50%25" y="50%25" dominant-baseline="middle" text-anchor="middle" font-family="monospace" font-size="14px" fill="%23999"%3E📎%3C/text%3E%3C/svg%3E';
+                                  }}
+                                />
+                              ) : (
+                                <div className="w-12 h-12 flex items-center justify-center bg-muted rounded border hover:border-primary cursor-pointer text-2xl">
+                                  📎
+                                </div>
+                              )}
+                            </button>
+                          ))}
                         </div>
                       ) : (
-                        <Badge variant="secondary">Unpaid</Badge>
+                        <span className="text-xs text-muted-foreground">No proofs</span>
                       )}
                     </TableCell>
-                    <TableCell>{format(new Date(enrollment.created_at), "yyyy-MM-dd HH:mm")}</TableCell>
+                    <TableCell>
+                      <div className="text-xs space-y-1">
+                        <div>
+                          <span className="text-muted-foreground">Assigned:</span><br />
+                          {format(new Date(enrollment.created_at), "MMM d, HH:mm")}
+                        </div>
+                        {latestSubmission && (
+                          <div className="text-green-600 font-medium">
+                            <span className="text-muted-foreground text-foreground">Submitted:</span><br />
+                            {format(new Date(latestSubmission.submitted_at), "MMM d, HH:mm")}
+                          </div>
+                        )}
+                      </div>
+                    </TableCell>
                     <TableCell className="text-right">
                       <div className="flex gap-1 justify-end">
                         <Button
@@ -515,6 +613,16 @@ export function EnrollmentsManager({ adminKey }: EnrollmentsManagerProps) {
                         >
                           <Trash2 className="w-4 h-4 text-destructive" />
                         </Button>
+                        {!isPaid && paymentInfo && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleMarkPaid(enrollment.id)}
+                            className="text-xs"
+                          >
+                            Mark Paid
+                          </Button>
+                        )}
                       </div>
                     </TableCell>
                   </TableRow>

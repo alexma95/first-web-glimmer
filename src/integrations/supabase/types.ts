@@ -23,6 +23,7 @@ export type Database = {
           product_id: string
           proof_file_id: string | null
           status: Database["public"]["Enums"]["assignment_status_type"]
+          submitted_at: string | null
           text_option_id: string
           text_snapshot_md: string
           user_id: string | null
@@ -35,6 +36,7 @@ export type Database = {
           product_id: string
           proof_file_id?: string | null
           status?: Database["public"]["Enums"]["assignment_status_type"]
+          submitted_at?: string | null
           text_option_id: string
           text_snapshot_md: string
           user_id?: string | null
@@ -47,6 +49,7 @@ export type Database = {
           product_id?: string
           proof_file_id?: string | null
           status?: Database["public"]["Enums"]["assignment_status_type"]
+          submitted_at?: string | null
           text_option_id?: string
           text_snapshot_md?: string
           user_id?: string | null
