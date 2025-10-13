@@ -116,8 +116,8 @@ const Index = () => {
         const outOfStock = textAvailability.filter(item => item.count === 0);
         if (outOfStock.length > 0) {
           toast({
-            title: "Gig Completed",
-            description: "Sorry! All slots for this campaign have been filled. All submissions have been received and the gig is now closed. Please check back later for new opportunities.",
+            title: "All Spots Taken",
+            description: "This gig is first come, first serve, and unfortunately all spots have been taken. Don't worry though — more gigs are coming soon! Check back later for new opportunities.",
             variant: "destructive",
           });
           return;

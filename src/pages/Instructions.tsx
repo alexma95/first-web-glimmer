@@ -205,7 +205,14 @@ const Instructions = () => {
             </div>
             <div className="flex items-start gap-3">
               <span className="font-bold text-lg">4️⃣</span>
-              <p className="text-sm sm:text-base">Take a screenshot of your published review or confirmation email.</p>
+              <div>
+                <p className="text-sm sm:text-base mb-2">Take a screenshot for proof:</p>
+                <p className="text-sm text-muted-foreground ml-4">
+                  <strong>Important:</strong> You don't need to wait for your review to go live or for Amazon's email confirmation. 
+                  Simply take a screenshot while you're filling out the review text on Amazon's review form. 
+                  This way, the entire process can be completed in one go in just a few minutes, without any waiting!
+                </p>
+              </div>
             </div>
             <div className="flex items-start gap-3">
               <span className="font-bold text-lg">5️⃣</span>

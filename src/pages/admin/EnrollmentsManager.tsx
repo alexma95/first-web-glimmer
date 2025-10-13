@@ -476,9 +476,10 @@ export function EnrollmentsManager({ adminKey }: EnrollmentsManagerProps) {
                 <TableHead>Email</TableHead>
                 <TableHead>Campaign</TableHead>
                 <TableHead>State</TableHead>
-                <TableHead>Payment Info</TableHead>
+                <TableHead>Payment Details</TableHead>
                 <TableHead>Proofs</TableHead>
-                <TableHead>Timestamps</TableHead>
+                <TableHead>Assigned At</TableHead>
+                <TableHead>Submitted At</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
@@ -515,7 +516,7 @@ export function EnrollmentsManager({ adminKey }: EnrollmentsManagerProps) {
                     <TableCell>{enrollment.campaigns_new?.name || "-"}</TableCell>
                     <TableCell>{getStatusBadge(enrollment.state)}</TableCell>
                     <TableCell>
-                      <div className="space-y-1">
+                      <div className="space-y-1 max-w-[200px]">
                         {isPaid ? (
                           <Badge variant="default" className="mb-1">
                             <CheckCircle className="w-3 h-3 mr-1" />
@@ -525,15 +526,15 @@ export function EnrollmentsManager({ adminKey }: EnrollmentsManagerProps) {
                           <Badge variant="secondary">Unpaid</Badge>
                         )}
                         {paymentInfo && (
-                          <div className="text-xs space-y-0.5">
-                            <div><strong>{paymentInfo.method}</strong></div>
+                          <div className="text-xs space-y-1">
+                            <div className="font-medium">{paymentInfo.method}</div>
                             {paymentInfo.email && (
                               <div className="flex items-center gap-1">
-                                {paymentInfo.email}
+                                <span className="truncate">{paymentInfo.email}</span>
                                 <Button
                                   variant="ghost"
                                   size="sm"
-                                  className="h-4 w-4 p-0"
+                                  className="h-4 w-4 p-0 flex-shrink-0"
                                   onClick={() => copyToClipboard(paymentInfo.email)}
                                 >
                                   <Copy className="w-2.5 h-2.5" />
@@ -541,7 +542,20 @@ export function EnrollmentsManager({ adminKey }: EnrollmentsManagerProps) {
                               </div>
                             )}
                             {paymentInfo.full_name && (
-                              <div className="text-muted-foreground">{paymentInfo.full_name}</div>
+                              <div className="text-muted-foreground truncate">{paymentInfo.full_name}</div>
+                            )}
+                            {paymentInfo.bank_account_number && (
+                              <div className="text-muted-foreground">Bank: {paymentInfo.bank_account_number}</div>
+                            )}
+                            {paymentInfo.bank_details && (
+                              <div className="text-muted-foreground text-[10px] truncate" title={paymentInfo.bank_details}>
+                                {paymentInfo.bank_details}
+                              </div>
+                            )}
+                            {paymentInfo.address_full && (
+                              <div className="text-muted-foreground text-[10px] truncate" title={paymentInfo.address_full}>
+                                📍 {paymentInfo.address_full}
+                              </div>
                             )}
                           </div>
                         )}
@@ -584,18 +598,18 @@ export function EnrollmentsManager({ adminKey }: EnrollmentsManagerProps) {
                       )}
                     </TableCell>
                     <TableCell>
-                      <div className="text-xs space-y-1">
-                        <div>
-                          <span className="text-muted-foreground">Assigned:</span><br />
-                          {format(new Date(enrollment.created_at), "MMM d, HH:mm")}
-                        </div>
-                        {latestSubmission && (
-                          <div className="text-green-600 font-medium">
-                            <span className="text-muted-foreground text-foreground">Submitted:</span><br />
-                            {format(new Date(latestSubmission.submitted_at), "MMM d, HH:mm")}
-                          </div>
-                        )}
+                      <div className="text-xs">
+                        {format(new Date(enrollment.created_at), "MMM d, HH:mm")}
                       </div>
+                    </TableCell>
+                    <TableCell>
+                      {latestSubmission ? (
+                        <div className="text-xs font-medium text-green-600">
+                          {format(new Date(latestSubmission.submitted_at), "MMM d, HH:mm")}
+                        </div>
+                      ) : (
+                        <div className="text-xs text-muted-foreground">-</div>
+                      )}
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex gap-1 justify-end">
