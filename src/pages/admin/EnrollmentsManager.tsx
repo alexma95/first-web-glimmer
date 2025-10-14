@@ -487,9 +487,7 @@ export function EnrollmentsManager({ adminKey }: EnrollmentsManagerProps) {
               {enrollments.map((enrollment) => {
                 const isPaid = enrollment.payment_records && enrollment.payment_records.length > 0;
                 const latestPayment = isPaid ? enrollment.payment_records[0] : null;
-                const paymentInfo = Array.isArray(enrollment.payment_info) && enrollment.payment_info.length > 0 
-                  ? enrollment.payment_info[0] 
-                  : null;
+                const paymentInfo = enrollment.payment_info;
                 const assignments = enrollment.assignments || [];
                 const proofsWithFiles = assignments.filter((a: any) => a.proof_file_id && a.files);
                 const submittedAssignments = assignments.filter((a: any) => a.submitted_at);
