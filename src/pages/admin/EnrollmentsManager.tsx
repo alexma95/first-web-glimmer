@@ -56,7 +56,7 @@ export function EnrollmentsManager({ adminKey }: EnrollmentsManagerProps) {
           campaigns_new(name, id),
           payment_records(paid_at, notes),
           assignments(submitted_at, proof_file_id, files(storage_key, mime_type)),
-          payment_info(method, email, full_name)
+          payment_info(method, email, full_name, bank_account_number, bank_details, address_full)
         `)
         .order("created_at", { ascending: false });
 
