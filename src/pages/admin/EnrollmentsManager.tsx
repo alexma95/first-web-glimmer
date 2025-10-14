@@ -516,7 +516,7 @@ export function EnrollmentsManager({ adminKey }: EnrollmentsManagerProps) {
                     <TableCell>{enrollment.campaigns_new?.name || "-"}</TableCell>
                     <TableCell>{getStatusBadge(enrollment.state)}</TableCell>
                     <TableCell>
-                      <div className="space-y-1 max-w-[200px]">
+                      <div className="space-y-1 min-w-[200px]">
                         {isPaid ? (
                           <Badge variant="default" className="mb-1">
                             <CheckCircle className="w-3 h-3 mr-1" />
@@ -525,9 +525,9 @@ export function EnrollmentsManager({ adminKey }: EnrollmentsManagerProps) {
                         ) : (
                           <Badge variant="secondary">Unpaid</Badge>
                         )}
-                        {paymentInfo && (
+                        {paymentInfo ? (
                           <div className="text-xs space-y-1">
-                            <div className="font-medium">{paymentInfo.method}</div>
+                            <div className="font-semibold text-primary uppercase">{paymentInfo.method}</div>
                             {paymentInfo.email && (
                               <div className="flex items-center gap-1">
                                 <span className="truncate">{paymentInfo.email}</span>
@@ -542,22 +542,26 @@ export function EnrollmentsManager({ adminKey }: EnrollmentsManagerProps) {
                               </div>
                             )}
                             {paymentInfo.full_name && (
-                              <div className="text-muted-foreground truncate">{paymentInfo.full_name}</div>
+                              <div className="text-muted-foreground">{paymentInfo.full_name}</div>
                             )}
                             {paymentInfo.bank_account_number && (
-                              <div className="text-muted-foreground">Bank: {paymentInfo.bank_account_number}</div>
+                              <div className="text-muted-foreground">
+                                <span className="font-medium">Account:</span> {paymentInfo.bank_account_number}
+                              </div>
                             )}
                             {paymentInfo.bank_details && (
-                              <div className="text-muted-foreground text-[10px] truncate" title={paymentInfo.bank_details}>
-                                {paymentInfo.bank_details}
+                              <div className="text-muted-foreground text-[10px]" title={paymentInfo.bank_details}>
+                                <span className="font-medium">Bank:</span> {paymentInfo.bank_details.length > 30 ? paymentInfo.bank_details.substring(0, 30) + '...' : paymentInfo.bank_details}
                               </div>
                             )}
                             {paymentInfo.address_full && (
-                              <div className="text-muted-foreground text-[10px] truncate" title={paymentInfo.address_full}>
-                                📍 {paymentInfo.address_full}
+                              <div className="text-muted-foreground text-[10px]" title={paymentInfo.address_full}>
+                                📍 {paymentInfo.address_full.length > 30 ? paymentInfo.address_full.substring(0, 30) + '...' : paymentInfo.address_full}
                               </div>
                             )}
                           </div>
+                        ) : (
+                          <div className="text-xs text-muted-foreground italic">No payment info yet</div>
                         )}
                       </div>
                     </TableCell>
@@ -748,6 +752,15 @@ export function EnrollmentsManager({ adminKey }: EnrollmentsManagerProps) {
                       )}
                       {selectedEnrollment.payment.full_name && (
                         <p><strong>Name:</strong> {selectedEnrollment.payment.full_name}</p>
+                      )}
+                      {selectedEnrollment.payment.bank_account_number && (
+                        <p><strong>Bank Account:</strong> {selectedEnrollment.payment.bank_account_number}</p>
+                      )}
+                      {selectedEnrollment.payment.bank_details && (
+                        <p><strong>Bank Details:</strong> {selectedEnrollment.payment.bank_details}</p>
+                      )}
+                      {selectedEnrollment.payment.address_full && (
+                        <p><strong>Address:</strong> {selectedEnrollment.payment.address_full}</p>
                       )}
                     </div>
                   </Card>
