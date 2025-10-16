@@ -354,6 +354,11 @@ export type Database = {
         Args:
           | { p_campaign_id: string }
           | { p_campaign_id: string; p_clone_products?: boolean }
+          | {
+              p_campaign_id: string
+              p_clone_products?: boolean
+              p_clone_text_options?: boolean
+            }
         Returns: string
       }
     }
