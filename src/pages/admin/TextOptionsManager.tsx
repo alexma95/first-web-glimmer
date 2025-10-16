@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -23,6 +24,7 @@ export function TextOptionsManager({ adminKey, campaignId }: TextOptionsManagerP
   const [bulkText, setBulkText] = useState("");
   const [separator, setSeparator] = useState<"newline" | "comma">("newline");
   const [loading, setLoading] = useState(false);
+  const [selectedForDelete, setSelectedForDelete] = useState<string[]>([]);
 
   useEffect(() => {
     if (campaignId) {
@@ -141,6 +143,49 @@ export function TextOptionsManager({ adminKey, campaignId }: TextOptionsManagerP
     }
   };
 
+  const handleBulkDelete = async () => {
+    if (selectedForDelete.length === 0) return;
+
+    setLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('admin-manage-text-options', {
+        body: {
+          action: 'bulk_delete',
+          adminKey,
+          textOptionIds: selectedForDelete,
+        },
+      });
+
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+
+      toast({
+        title: "Success",
+        description: `Deleted ${selectedForDelete.length} text options`,
+      });
+
+      setSelectedForDelete([]);
+      loadTextOptions();
+    } catch (error) {
+      console.error("Error:", error);
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to delete text options",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedForDelete.length === textOptions.length) {
+      setSelectedForDelete([]);
+    } else {
+      setSelectedForDelete(textOptions.map(opt => opt.id));
+    }
+  };
+
   if (!campaignId) {
     return (
       <Card className="p-6">
@@ -209,14 +254,32 @@ export function TextOptionsManager({ adminKey, campaignId }: TextOptionsManagerP
       </Card>
 
       <Card className="p-6">
-        <h3 className="text-xl font-bold mb-4">
-          Text Options ({textOptions.length})
-        </h3>
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-xl font-bold">
+            Text Options ({textOptions.length})
+          </h3>
+          {selectedForDelete.length > 0 && (
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={handleBulkDelete}
+              disabled={loading}
+            >
+              Delete Selected ({selectedForDelete.length})
+            </Button>
+          )}
+        </div>
 
         <div className="max-h-[600px] overflow-y-auto">
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead className="w-12">
+                  <Checkbox
+                    checked={selectedForDelete.length === textOptions.length && textOptions.length > 0}
+                    onCheckedChange={toggleSelectAll}
+                  />
+                </TableHead>
                 <TableHead>Text</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Assigned To</TableHead>
@@ -226,6 +289,18 @@ export function TextOptionsManager({ adminKey, campaignId }: TextOptionsManagerP
             <TableBody>
               {textOptions.map((option) => (
                 <TableRow key={option.id}>
+                  <TableCell>
+                    <Checkbox
+                      checked={selectedForDelete.includes(option.id)}
+                      onCheckedChange={(checked) => {
+                        if (checked) {
+                          setSelectedForDelete([...selectedForDelete, option.id]);
+                        } else {
+                          setSelectedForDelete(selectedForDelete.filter(id => id !== option.id));
+                        }
+                      }}
+                    />
+                  </TableCell>
                   <TableCell className="max-w-md truncate">{option.text_md}</TableCell>
                   <TableCell>
                     <Badge

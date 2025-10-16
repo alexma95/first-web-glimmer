@@ -31,6 +31,7 @@ export function CampaignManager({ adminKey, onCampaignSelect }: CampaignManagerP
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [selectedCampaign, setSelectedCampaign] = useState<Campaign | null>(null);
   const [loading, setLoading] = useState(false);
+  const [cloneWithTextOptions, setCloneWithTextOptions] = useState(true);
 
   useEffect(() => {
     loadCampaigns();
@@ -415,20 +416,33 @@ export function CampaignManager({ adminKey, onCampaignSelect }: CampaignManagerP
               />
             </div>
 
-            <div className="flex gap-3 flex-wrap">
-              <Button onClick={handleSave} disabled={loading}>
-                {loading ? "Saving..." : "Save Campaign"}
+            <div className="space-y-4">
+              <div className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  id="clone_text_options"
+                  checked={cloneWithTextOptions}
+                  onChange={(e) => setCloneWithTextOptions(e.target.checked)}
+                  className="rounded"
+                />
+                <Label htmlFor="clone_text_options">Include text options when cloning</Label>
+              </div>
+
+              <div className="flex gap-3 flex-wrap">
+                <Button onClick={handleSave} disabled={loading}>
+                  {loading ? "Saving..." : "Save Campaign"}
+                </Button>
+                <Button onClick={() => handleClone(true)} variant="outline" disabled={loading}>
+                  Clone with Products
+                </Button>
+                <Button onClick={() => handleClone(false)} variant="outline" disabled={loading}>
+                  Clone without Products
+                </Button>
+                <Button onClick={handleDelete} variant="destructive" disabled={loading}>
+                  <Trash2 className="w-4 h-4 mr-2" />
+                 Delete Campaign
               </Button>
-              <Button onClick={() => handleClone(true)} variant="outline" disabled={loading}>
-                Clone with Products
-              </Button>
-              <Button onClick={() => handleClone(false)} variant="outline" disabled={loading}>
-                Clone without Products
-              </Button>
-              <Button onClick={handleDelete} variant="destructive" disabled={loading}>
-                <Trash2 className="w-4 h-4 mr-2" />
-                Delete Campaign
-              </Button>
+              </div>
             </div>
           </div>
         </Card>

@@ -18,7 +18,7 @@ Deno.serve(async (req) => {
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    const { action, adminKey: providedKey, productId, texts, textOptionId, status } = await req.json();
+    const { action, adminKey: providedKey, productId, texts, textOptionId, textOptionIds, status } = await req.json();
 
     // Verify admin key
     if (providedKey !== adminKey) {
@@ -85,6 +85,33 @@ Deno.serve(async (req) => {
       console.log(`Successfully updated text option status to ${status}`);
       return new Response(
         JSON.stringify({ success: true, data }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    if (action === 'bulk_delete') {
+      if (!textOptionIds || !Array.isArray(textOptionIds) || textOptionIds.length === 0) {
+        return new Response(
+          JSON.stringify({ error: 'textOptionIds array is required' }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      console.log(`Admin action: bulk_delete - deleting ${textOptionIds.length} text options`);
+
+      const { error } = await supabase
+        .from('product_text_options')
+        .delete()
+        .in('id', textOptionIds);
+
+      if (error) {
+        console.error('Bulk delete error:', error);
+        throw error;
+      }
+
+      console.log(`Successfully deleted ${textOptionIds.length} text options`);
+      return new Response(
+        JSON.stringify({ success: true, message: `Deleted ${textOptionIds.length} text options` }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
