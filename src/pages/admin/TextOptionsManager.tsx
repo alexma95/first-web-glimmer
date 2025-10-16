@@ -178,6 +178,41 @@ export function TextOptionsManager({ adminKey, campaignId }: TextOptionsManagerP
     }
   };
 
+  const handleCleanupDuplicates = async () => {
+    if (!confirm('This will find and remove duplicate text options across all products. Assigned texts will be preserved. Continue?')) {
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('admin-manage-text-options', {
+        body: {
+          action: 'cleanup_duplicates',
+          adminKey,
+        },
+      });
+
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+
+      toast({
+        title: "Success",
+        description: data.message || 'Duplicates cleaned up successfully',
+      });
+
+      await loadTextOptions();
+    } catch (error) {
+      console.error("Error:", error);
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to cleanup duplicates",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const toggleSelectAll = () => {
     if (selectedForDelete.length === textOptions.length) {
       setSelectedForDelete([]);
@@ -258,16 +293,26 @@ export function TextOptionsManager({ adminKey, campaignId }: TextOptionsManagerP
           <h3 className="text-xl font-bold">
             Text Options ({textOptions.length})
           </h3>
-          {selectedForDelete.length > 0 && (
+          <div className="flex gap-2">
             <Button
-              variant="destructive"
+              variant="outline"
               size="sm"
-              onClick={handleBulkDelete}
+              onClick={handleCleanupDuplicates}
               disabled={loading}
             >
-              Delete Selected ({selectedForDelete.length})
+              Cleanup Duplicates
             </Button>
-          )}
+            {selectedForDelete.length > 0 && (
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={handleBulkDelete}
+                disabled={loading}
+              >
+                Delete Selected ({selectedForDelete.length})
+              </Button>
+            )}
+          </div>
         </div>
 
         <div className="max-h-[600px] overflow-y-auto">

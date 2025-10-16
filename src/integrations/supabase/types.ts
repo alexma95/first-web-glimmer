@@ -361,6 +361,14 @@ export type Database = {
             }
         Returns: string
       }
+      find_duplicate_text_options: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          duplicate_count: number
+          product_id: string
+          text_md: string
+        }[]
+      }
     }
     Enums: {
       assignment_status_type:
