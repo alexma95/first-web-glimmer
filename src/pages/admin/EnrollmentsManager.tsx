@@ -10,6 +10,7 @@ import { Eye, Download, Filter, Copy, CheckCircle, Trash2 } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 import { format } from "date-fns";
 
 interface EnrollmentsManagerProps {
@@ -25,6 +26,8 @@ export function EnrollmentsManager({ adminKey }: EnrollmentsManagerProps) {
   const [selectedCampaign, setSelectedCampaign] = useState<string>("all");
   const [paymentNotes, setPaymentNotes] = useState("");
   const [paymentFilter, setPaymentFilter] = useState<string>("all");
+  const [paymentAmount, setPaymentAmount] = useState<string>("");
+  const [paymentAccount, setPaymentAccount] = useState<"A" | "M">("A");
 
   useEffect(() => {
     loadCampaigns();
@@ -200,13 +203,26 @@ export function EnrollmentsManager({ adminKey }: EnrollmentsManagerProps) {
   };
 
   const handleMarkPaid = async (enrollmentId: string) => {
+    const amount = parseFloat(paymentAmount);
+    
+    if (!paymentAmount || isNaN(amount) || amount <= 0) {
+      toast({
+        title: "Error",
+        description: "Please enter a valid payment amount",
+        variant: "destructive",
+      });
+      return;
+    }
+
     try {
-      // Insert payment record with optional notes
+      // Insert payment record with amount and account
       const { error: recordError } = await supabase
         .from("payment_records")
         .insert({
           enrollment_id: enrollmentId,
           notes: paymentNotes.trim() || null,
+          amount: amount,
+          account: paymentAccount,
         });
 
       if (recordError) throw recordError;
@@ -221,10 +237,12 @@ export function EnrollmentsManager({ adminKey }: EnrollmentsManagerProps) {
 
       toast({
         title: "Success",
-        description: "Marked as paid",
+        description: `Marked as paid: $${amount.toFixed(2)} from Account ${paymentAccount}`,
       });
 
       setPaymentNotes("");
+      setPaymentAmount("");
+      setPaymentAccount("A");
       loadEnrollments();
       if (selectedEnrollment) {
         loadEnrollmentDetail(enrollmentId);
@@ -769,13 +787,23 @@ export function EnrollmentsManager({ adminKey }: EnrollmentsManagerProps) {
                 <div>
                   <h3 className="font-bold mb-2">Payment History</h3>
                   <div className="space-y-2">
-                    {selectedEnrollment.paymentRecords.map((record: any) => (
+                     {selectedEnrollment.paymentRecords.map((record: any) => (
                       <Card key={record.id} className="p-4">
                         <div className="flex items-start justify-between">
-                          <div>
+                          <div className="space-y-1">
                             <p className="font-semibold text-sm">
                               Paid on {format(new Date(record.paid_at), "PPP 'at' p")}
                             </p>
+                            {record.amount && (
+                              <p className="text-sm">
+                                <strong>Amount:</strong> ${parseFloat(record.amount).toFixed(2)}
+                              </p>
+                            )}
+                            {record.account && (
+                              <p className="text-sm">
+                                <strong>Account:</strong> {record.account}
+                              </p>
+                            )}
                             {record.notes && (
                               <p className="text-sm text-muted-foreground mt-1">
                                 Note: {record.notes}
@@ -794,17 +822,44 @@ export function EnrollmentsManager({ adminKey }: EnrollmentsManagerProps) {
               )}
 
               <div className="space-y-4">
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div>
+                    <Label htmlFor="payment-amount">Payment Amount (USD) *</Label>
+                    <Input
+                      id="payment-amount"
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      placeholder="5.50"
+                      value={paymentAmount}
+                      onChange={(e) => setPaymentAmount(e.target.value)}
+                      className="mt-2"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="payment-account">Payment Account *</Label>
+                    <select
+                      id="payment-account"
+                      value={paymentAccount}
+                      onChange={(e) => setPaymentAccount(e.target.value as "A" | "M")}
+                      className="mt-2 flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                    >
+                      <option value="A">Account A</option>
+                      <option value="M">Account M</option>
+                    </select>
+                  </div>
+                </div>
                 <div>
                   <Label htmlFor="payment-notes">Payment Notes (Optional)</Label>
                   <Textarea
                     id="payment-notes"
-                    placeholder="e.g., Paid from PayPal account john@example.com"
+                    placeholder="e.g., Additional payment details"
                     value={paymentNotes}
                     onChange={(e) => setPaymentNotes(e.target.value)}
                     className="mt-2"
                   />
                   <p className="text-sm text-muted-foreground mt-1">
-                    Add notes about which PayPal account was used or any other payment details
+                    Wise & PayPal use Account A, Bank Wire can use either account
                   </p>
                 </div>
                 <Button

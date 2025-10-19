@@ -232,6 +232,8 @@ export type Database = {
       }
       payment_records: {
         Row: {
+          account: string | null
+          amount: number | null
           created_at: string
           enrollment_id: string
           id: string
@@ -239,6 +241,8 @@ export type Database = {
           paid_at: string
         }
         Insert: {
+          account?: string | null
+          amount?: number | null
           created_at?: string
           enrollment_id: string
           id?: string
@@ -246,6 +250,8 @@ export type Database = {
           paid_at?: string
         }
         Update: {
+          account?: string | null
+          amount?: number | null
           created_at?: string
           enrollment_id?: string
           id?: string

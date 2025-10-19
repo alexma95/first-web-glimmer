@@ -9,6 +9,7 @@ import { CampaignManager } from "./CampaignManager";
 import { ProductsManager } from "./ProductsManager";
 import { TextOptionsManager } from "./TextOptionsManager";
 import { EnrollmentsManager } from "./EnrollmentsManager";
+import { PaymentStats } from "./PaymentStats";
 
 const Admin = () => {
   const [adminKey, setAdminKey] = useState("");
@@ -90,6 +91,7 @@ const Admin = () => {
             <TabsTrigger value="products">Products</TabsTrigger>
             <TabsTrigger value="texts">Text Options</TabsTrigger>
             <TabsTrigger value="enrollments">Enrollments</TabsTrigger>
+            <TabsTrigger value="payments">Payments</TabsTrigger>
           </TabsList>
 
           <TabsContent value="dashboard">
@@ -119,6 +121,10 @@ const Admin = () => {
 
           <TabsContent value="enrollments">
             <EnrollmentsManager adminKey={adminKey} />
+          </TabsContent>
+
+          <TabsContent value="payments">
+            <PaymentStats />
           </TabsContent>
         </Tabs>
       </div>
