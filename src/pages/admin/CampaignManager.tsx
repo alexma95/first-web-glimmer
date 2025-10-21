@@ -139,7 +139,8 @@ export function CampaignManager({ adminKey, onCampaignSelect }: CampaignManagerP
       const { data: newCampaignId, error } = await supabase
         .rpc("clone_campaign", { 
           p_campaign_id: selectedCampaign.id,
-          p_clone_products: cloneProducts 
+          p_clone_products: cloneProducts,
+          p_clone_text_options: cloneWithTextOptions
         });
 
       if (error) {
