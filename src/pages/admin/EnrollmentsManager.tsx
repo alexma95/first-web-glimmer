@@ -203,9 +203,9 @@ export function EnrollmentsManager({ adminKey }: EnrollmentsManagerProps) {
   };
 
   const handleMarkPaid = async (enrollmentId: string) => {
-    const amount = parseFloat(paymentAmount);
+    const amount = paymentAmount ? parseFloat(paymentAmount) : null;
     
-    if (!paymentAmount || isNaN(amount) || amount <= 0) {
+    if (paymentAmount && (isNaN(amount as number) || (amount as number) <= 0)) {
       toast({
         title: "Error",
         description: "Please enter a valid payment amount",
@@ -237,7 +237,9 @@ export function EnrollmentsManager({ adminKey }: EnrollmentsManagerProps) {
 
       toast({
         title: "Success",
-        description: `Marked as paid: $${amount.toFixed(2)} from Account ${paymentAccount}`,
+        description: amount 
+          ? `Marked as paid: $${amount.toFixed(2)} from Account ${paymentAccount}`
+          : `Marked as paid from Account ${paymentAccount}`,
       });
 
       setPaymentNotes("");
@@ -824,7 +826,7 @@ export function EnrollmentsManager({ adminKey }: EnrollmentsManagerProps) {
               <div className="space-y-4">
                 <div className="grid gap-4 md:grid-cols-2">
                   <div>
-                    <Label htmlFor="payment-amount">Payment Amount (USD) *</Label>
+                    <Label htmlFor="payment-amount">Payment Amount (USD) - Optional</Label>
                     <Input
                       id="payment-amount"
                       type="number"
