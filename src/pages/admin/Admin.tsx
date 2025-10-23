@@ -70,8 +70,8 @@ const Admin = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5 py-8">
       <div className="container max-w-7xl mx-auto px-4">
-        <div className="flex justify-between items-center mb-8">
-          <h1 className="text-4xl font-bold">Admin Dashboard</h1>
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6 sm:mb-8">
+          <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold">Admin Dashboard</h1>
           <Button
             variant="outline"
             onClick={() => {
@@ -79,20 +79,23 @@ const Admin = () => {
               setIsAuthenticated(false);
               setAdminKey("");
             }}
+            className="w-full sm:w-auto"
           >
             Logout
           </Button>
         </div>
 
-        <Tabs defaultValue="dashboard" className="space-y-6">
-          <TabsList>
-            <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
-            <TabsTrigger value="campaign">Campaign</TabsTrigger>
-            <TabsTrigger value="products">Products</TabsTrigger>
-            <TabsTrigger value="texts">Text Options</TabsTrigger>
-            <TabsTrigger value="enrollments">Enrollments</TabsTrigger>
-            <TabsTrigger value="payments">Payments</TabsTrigger>
-          </TabsList>
+        <Tabs defaultValue="dashboard" className="space-y-4 sm:space-y-6">
+          <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
+            <TabsList className="w-full sm:w-auto inline-flex min-w-max">
+              <TabsTrigger value="dashboard" className="text-xs sm:text-sm">Dashboard</TabsTrigger>
+              <TabsTrigger value="campaign" className="text-xs sm:text-sm">Campaign</TabsTrigger>
+              <TabsTrigger value="products" className="text-xs sm:text-sm">Products</TabsTrigger>
+              <TabsTrigger value="texts" className="text-xs sm:text-sm">Text Options</TabsTrigger>
+              <TabsTrigger value="enrollments" className="text-xs sm:text-sm">Enrollments</TabsTrigger>
+              <TabsTrigger value="payments" className="text-xs sm:text-sm">Payments</TabsTrigger>
+            </TabsList>
+          </div>
 
           <TabsContent value="dashboard">
             <Dashboard adminKey={adminKey} />

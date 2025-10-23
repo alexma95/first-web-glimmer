@@ -228,20 +228,20 @@ export function CampaignManager({ adminKey, onCampaignSelect }: CampaignManagerP
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Currently Editing Banner */}
       {selectedCampaign && (
         <Card className="p-4 border-2 border-primary/20 bg-primary/5">
-          <div className="flex justify-between items-start mb-2">
+          <div className="flex flex-col sm:flex-row justify-between items-start gap-4 mb-2">
             <div>
               <div className="text-xs text-muted-foreground mb-1">Currently Editing</div>
-              <h2 className="text-2xl font-bold">{selectedCampaign.name}</h2>
+              <h2 className="text-xl sm:text-2xl font-bold">{selectedCampaign.name}</h2>
             </div>
             <Badge variant={selectedCampaign.status === 'active' ? 'default' : 'secondary'}>
               {selectedCampaign.status}
             </Badge>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
             <div>
               <span className="text-muted-foreground">ID:</span>{" "}
               <code className="text-xs">{selectedCampaign.id.slice(0, 8)}...</code>
@@ -255,14 +255,16 @@ export function CampaignManager({ adminKey, onCampaignSelect }: CampaignManagerP
       )}
 
       {/* Campaign List */}
-      <Card className="p-6">
-        <div className="flex justify-between items-center mb-4">
-          <h3 className="text-xl font-bold">All Campaigns</h3>
-          <Button onClick={handleCreate} size="sm" disabled={loading}>
+      <Card className="p-4 sm:p-6">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
+          <h3 className="text-lg sm:text-xl font-bold">All Campaigns</h3>
+          <Button onClick={handleCreate} size="sm" disabled={loading} className="w-full sm:w-auto">
             Create New
           </Button>
         </div>
         
+        <div className="overflow-x-auto -mx-4 sm:mx-0">
+          <div className="min-w-[700px]">
         <Table>
           <TableHeader>
             <TableRow>
@@ -300,15 +302,17 @@ export function CampaignManager({ adminKey, onCampaignSelect }: CampaignManagerP
             ))}
           </TableBody>
         </Table>
+          </div>
+        </div>
       </Card>
 
       {/* Edit Selected Campaign */}
       {selectedCampaign && (
-        <Card className="p-6">
-          <h3 className="text-xl font-bold mb-6">Edit Campaign Settings</h3>
+        <Card className="p-4 sm:p-6">
+          <h3 className="text-lg sm:text-xl font-bold mb-4 sm:mb-6">Edit Campaign Settings</h3>
 
           {/* Campaign ID and URL Section */}
-          <Card className="p-4 mb-6 bg-muted/50">
+          <Card className="p-4 mb-4 sm:mb-6 bg-muted/50">
             <div className="space-y-3">
               <div>
                 <Label className="text-xs text-muted-foreground">Campaign ID</Label>

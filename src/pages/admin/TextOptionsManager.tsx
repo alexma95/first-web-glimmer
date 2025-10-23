@@ -230,11 +230,11 @@ export function TextOptionsManager({ adminKey, campaignId }: TextOptionsManagerP
   }
 
   return (
-    <div className="space-y-6">
-      <Card className="p-6">
-        <h2 className="text-2xl font-bold mb-6">Text Options Management</h2>
+    <div className="space-y-4 sm:space-y-6">
+      <Card className="p-4 sm:p-6">
+        <h2 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6">Text Options Management</h2>
 
-        <div className="space-y-4 mb-6">
+        <div className="space-y-4 mb-4 sm:mb-6">
           <div className="space-y-2">
             <Label>Select Product</Label>
             <Select value={selectedProductId} onValueChange={setSelectedProductId}>
@@ -288,17 +288,18 @@ export function TextOptionsManager({ adminKey, campaignId }: TextOptionsManagerP
         </div>
       </Card>
 
-      <Card className="p-6">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-xl font-bold">
+      <Card className="p-4 sm:p-6">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-4">
+          <h3 className="text-lg sm:text-xl font-bold">
             Text Options ({textOptions.length})
           </h3>
-          <div className="flex gap-2">
+          <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
             <Button
               variant="outline"
               size="sm"
               onClick={handleCleanupDuplicates}
               disabled={loading}
+              className="w-full sm:w-auto justify-start"
             >
               Cleanup Duplicates
             </Button>
@@ -308,6 +309,7 @@ export function TextOptionsManager({ adminKey, campaignId }: TextOptionsManagerP
                 size="sm"
                 onClick={handleBulkDelete}
                 disabled={loading}
+                className="w-full sm:w-auto justify-start"
               >
                 Delete Selected ({selectedForDelete.length})
               </Button>
@@ -316,6 +318,8 @@ export function TextOptionsManager({ adminKey, campaignId }: TextOptionsManagerP
         </div>
 
         <div className="max-h-[600px] overflow-y-auto">
+          <div className="overflow-x-auto -mx-4 sm:mx-0">
+            <div className="min-w-[700px]">
           <Table>
             <TableHeader>
               <TableRow>
@@ -376,6 +380,8 @@ export function TextOptionsManager({ adminKey, campaignId }: TextOptionsManagerP
               ))}
             </TableBody>
           </Table>
+            </div>
+          </div>
         </div>
       </Card>
     </div>

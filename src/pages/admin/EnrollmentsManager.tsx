@@ -452,11 +452,11 @@ export function EnrollmentsManager({ adminKey }: EnrollmentsManagerProps) {
   };
 
   return (
-    <div className="space-y-6">
-      <Card className="p-6">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-          <h2 className="text-2xl font-bold">Enrollments ({enrollments.length})</h2>
-          <div className="flex gap-2 w-full sm:w-auto flex-wrap">
+    <div className="space-y-4 sm:space-y-6">
+      <Card className="p-4 sm:p-6">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4 sm:mb-6">
+          <h2 className="text-xl sm:text-2xl font-bold">Enrollments ({enrollments.length})</h2>
+          <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
             <Select value={selectedCampaign} onValueChange={setSelectedCampaign}>
               <SelectTrigger className="w-full sm:w-[200px]">
                 <Filter className="w-4 h-4 mr-2" />
@@ -482,7 +482,7 @@ export function EnrollmentsManager({ adminKey }: EnrollmentsManagerProps) {
                 <SelectItem value="unpaid">Unpaid</SelectItem>
               </SelectContent>
             </Select>
-            <Button onClick={handleExportCSV}>
+            <Button onClick={handleExportCSV} className="w-full sm:w-auto">
               <Download className="w-4 h-4 mr-2" />
               Export
             </Button>
@@ -490,6 +490,8 @@ export function EnrollmentsManager({ adminKey }: EnrollmentsManagerProps) {
         </div>
 
         <div className="max-h-[600px] overflow-y-auto">
+          <div className="overflow-x-auto -mx-4 sm:mx-0">
+            <div className="min-w-[900px]">
           <Table>
             <TableHeader>
               <TableRow>
@@ -666,6 +668,8 @@ export function EnrollmentsManager({ adminKey }: EnrollmentsManagerProps) {
               })}
             </TableBody>
           </Table>
+            </div>
+          </div>
         </div>
       </Card>
 
@@ -676,7 +680,7 @@ export function EnrollmentsManager({ adminKey }: EnrollmentsManagerProps) {
           </DialogHeader>
 
           {selectedEnrollment && (
-            <div className="space-y-6">
+            <div className="space-y-4 sm:space-y-6">
               <div>
                 <h3 className="font-bold mb-2">Email: {selectedEnrollment.email}</h3>
                 <p className="text-sm text-muted-foreground">
@@ -824,7 +828,7 @@ export function EnrollmentsManager({ adminKey }: EnrollmentsManagerProps) {
               )}
 
               <div className="space-y-4">
-                <div className="grid gap-4 md:grid-cols-2">
+                <div className="grid gap-4 grid-cols-1 sm:grid-cols-2">
                   <div>
                     <Label htmlFor="payment-amount">Payment Amount (USD) - Optional</Label>
                     <Input

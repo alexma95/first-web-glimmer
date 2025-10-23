@@ -127,9 +127,9 @@ export function ProductsManager({ adminKey, campaignId }: ProductsManagerProps) 
   }
 
   return (
-    <Card className="p-6">
-      <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-bold">Products</h2>
+    <Card className="p-4 sm:p-6">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4 sm:mb-6">
+        <h2 className="text-xl sm:text-2xl font-bold">Products</h2>
         <Button
           onClick={() => {
             setEditProduct({
@@ -141,12 +141,15 @@ export function ProductsManager({ adminKey, campaignId }: ProductsManagerProps) 
             });
             setShowDialog(true);
           }}
+          className="w-full sm:w-auto"
         >
           <Plus className="w-4 h-4 mr-2" />
           Add Product
         </Button>
       </div>
 
+      <div className="overflow-x-auto -mx-4 sm:mx-0">
+        <div className="min-w-[600px]">
       <Table>
         <TableHeader>
           <TableRow>
@@ -189,9 +192,11 @@ export function ProductsManager({ adminKey, campaignId }: ProductsManagerProps) 
           ))}
         </TableBody>
       </Table>
+        </div>
+      </div>
 
       <Dialog open={showDialog} onOpenChange={setShowDialog}>
-        <DialogContent>
+        <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
             <DialogTitle>{editProduct?.id ? "Edit Product" : "Add Product"}</DialogTitle>
           </DialogHeader>

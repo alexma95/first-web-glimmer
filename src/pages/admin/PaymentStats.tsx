@@ -118,7 +118,7 @@ export function PaymentStats() {
           <CardDescription>Overview of all payments made</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid gap-4 md:grid-cols-2">
+          <div className="grid gap-4 grid-cols-1 sm:grid-cols-2">
             <div className="space-y-2">
               <p className="text-sm font-medium">Total Paid</p>
               <p className="text-3xl font-bold">${stats.totalAmount.toFixed(2)}</p>
@@ -128,7 +128,7 @@ export function PaymentStats() {
         </CardContent>
       </Card>
 
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2">
         <Card>
           <CardHeader>
             <CardTitle>By Payment Method</CardTitle>

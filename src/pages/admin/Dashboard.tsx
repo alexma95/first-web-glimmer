@@ -238,19 +238,19 @@ export function Dashboard({ adminKey }: DashboardProps) {
         </Card>
       </div>
 
-      <Card className="p-6">
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl font-bold">Bulk Actions</h2>
-          <Button variant="outline" size="sm" onClick={loadDashboardData}>
+      <Card className="p-4 sm:p-6">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4 sm:mb-6">
+          <h2 className="text-xl sm:text-2xl font-bold">Bulk Actions</h2>
+          <Button variant="outline" size="sm" onClick={loadDashboardData} className="w-full sm:w-auto">
             <RefreshCw className="w-4 h-4 mr-2" />
             Refresh
           </Button>
         </div>
 
-        <div className="flex flex-wrap gap-3">
+        <div className="flex flex-col sm:flex-row sm:flex-wrap gap-3">
           <AlertDialog>
             <AlertDialogTrigger asChild>
-              <Button variant="destructive" size="sm">
+              <Button variant="destructive" size="sm" className="w-full sm:w-auto justify-start">
                 <Trash2 className="w-4 h-4 mr-2" />
                 Delete All Text Options
               </Button>
@@ -271,7 +271,7 @@ export function Dashboard({ adminKey }: DashboardProps) {
 
           <AlertDialog>
             <AlertDialogTrigger asChild>
-              <Button variant="destructive" size="sm">
+              <Button variant="destructive" size="sm" className="w-full sm:w-auto justify-start">
                 <Trash2 className="w-4 h-4 mr-2" />
                 Delete All Proof Files
               </Button>
@@ -292,7 +292,7 @@ export function Dashboard({ adminKey }: DashboardProps) {
 
           <AlertDialog>
             <AlertDialogTrigger asChild>
-              <Button variant="destructive" size="sm">
+              <Button variant="destructive" size="sm" className="w-full sm:w-auto justify-start">
                 <Trash2 className="w-4 h-4 mr-2" />
                 Delete All User Data
               </Button>
@@ -315,10 +315,11 @@ export function Dashboard({ adminKey }: DashboardProps) {
         </div>
       </Card>
 
-      <Card className="p-6">
-        <h2 className="text-2xl font-bold mb-6">All Submissions & Payment Data</h2>
+      <Card className="p-4 sm:p-6">
+        <h2 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6">All Submissions & Payment Data</h2>
         
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto -mx-4 sm:mx-0">
+          <div className="min-w-[800px]">
           <Table>
             <TableHeader>
               <TableRow>
@@ -373,6 +374,7 @@ export function Dashboard({ adminKey }: DashboardProps) {
               )}
             </TableBody>
           </Table>
+          </div>
         </div>
       </Card>
     </div>
