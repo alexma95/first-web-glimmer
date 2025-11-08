@@ -75,6 +75,12 @@ export function EnrollmentsManager({ adminKey }: EnrollmentsManagerProps) {
         filteredData = filteredData.filter(e => e.payment_records && e.payment_records.length > 0);
       } else if (paymentFilter === "unpaid") {
         filteredData = filteredData.filter(e => !e.payment_records || e.payment_records.length === 0);
+      } else if (paymentFilter === "submitted") {
+        filteredData = filteredData.filter(e => {
+          const hasSubmissions = e.assignments?.some((asn: any) => asn.submitted_at);
+          const isPaid = e.payment_records && e.payment_records.length > 0;
+          return hasSubmissions && !isPaid;
+        });
       }
 
       // Sort by submission time (prioritize submitted assignments)
@@ -480,6 +486,7 @@ export function EnrollmentsManager({ adminKey }: EnrollmentsManagerProps) {
                 <SelectItem value="all">All Payments</SelectItem>
                 <SelectItem value="paid">Paid</SelectItem>
                 <SelectItem value="unpaid">Unpaid</SelectItem>
+                <SelectItem value="submitted">Submitted</SelectItem>
               </SelectContent>
             </Select>
             <Button onClick={handleExportCSV} className="w-full sm:w-auto">
