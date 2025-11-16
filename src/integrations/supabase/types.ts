@@ -356,19 +356,22 @@ export type Database = {
         Args: { p_email: string; p_product_id: string }
         Returns: string
       }
-      clone_campaign: {
-        Args:
-          | { p_campaign_id: string }
-          | { p_campaign_id: string; p_clone_products?: boolean }
-          | {
+      clone_campaign:
+        | { Args: { p_campaign_id: string }; Returns: string }
+        | {
+            Args: {
               p_campaign_id: string
               p_clone_products?: boolean
               p_clone_text_options?: boolean
             }
-        Returns: string
-      }
+            Returns: string
+          }
+        | {
+            Args: { p_campaign_id: string; p_clone_products?: boolean }
+            Returns: string
+          }
       find_duplicate_text_options: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
           duplicate_count: number
           product_id: string
