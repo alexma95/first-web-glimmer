@@ -42,7 +42,7 @@ const Instructions = () => {
     try {
       console.log('Loading enrollment data for:', enrollmentId);
       
-      // Get enrollment with campaign - DISABLE CACHE
+      // Get enrollment with campaign - FORCE FRESH DATA
       const { data: enrollment, error: enrollmentError } = await supabase
         .from("enrollments")
         .select("*, campaigns_new(*)")
@@ -178,66 +178,8 @@ const Instructions = () => {
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5 py-6 sm:py-8">
       <div className="container max-w-4xl mx-auto px-4 sm:px-6">
         <Card className="p-5 sm:p-8 mb-6 sm:mb-8 shadow-lg border-primary/20">
-          <h2 className="text-2xl sm:text-3xl font-bold mb-4 sm:mb-6">Your First Book Review Gig — Takes Less Than 5 Minutes</h2>
-          <p className="text-sm sm:text-base text-muted-foreground mb-6">
-            You'll get quick, book-specific AI-generated review examples to help you write faster and avoid creative blocks.
-            These examples are built using AI models that analyze the book's description and tone, you can use them as-is or personalize them.
-          </p>
-          
-          <div className="space-y-4 mb-6">
-            <div className="flex items-start gap-3">
-              <span className="font-bold text-lg">1️⃣</span>
-              <p className="text-sm sm:text-base">Download the book or its summary (you can skim or read as much as you like).</p>
-            </div>
-            <div className="flex items-start gap-3">
-              <span className="font-bold text-lg">2️⃣</span>
-              <div>
-                <p className="text-sm sm:text-base mb-2">Write your review:</p>
-                <ul className="list-disc list-inside space-y-1 ml-4 text-sm sm:text-base text-muted-foreground">
-                  <li>Use your own words, or</li>
-                  <li>Copy or adapt one of the AI-generated examples provided.</li>
-                </ul>
-              </div>
-            </div>
-            <div className="flex items-start gap-3">
-              <span className="font-bold text-lg">3️⃣</span>
-              <p className="text-sm sm:text-base">Click the provided Amazon link to publish your review.</p>
-            </div>
-            <div className="flex items-start gap-3">
-              <span className="font-bold text-lg">4️⃣</span>
-              <div>
-                <p className="text-sm sm:text-base mb-2">Take a screenshot for proof:</p>
-                <p className="text-sm text-muted-foreground ml-4">
-                  <strong>Important:</strong> You don't need to wait for your review to go live or for Amazon's email confirmation. 
-                  Simply take a screenshot while you're filling out the review text on Amazon's review form. 
-                  This way, the entire process can be completed in one go in just a few minutes, without any waiting!
-                </p>
-              </div>
-            </div>
-            <div className="flex items-start gap-3">
-              <span className="font-bold text-lg">5️⃣</span>
-              <p className="text-sm sm:text-base">Upload your proof and complete your payment details to receive your payout.</p>
-            </div>
-          </div>
-
-          <div className="border-t pt-4 mt-6">
-            <p className="font-semibold mb-2">⭐ Important Note</p>
-            <p className="text-sm sm:text-base text-muted-foreground mb-2">
-              If something doesn't work as expected or you have any questions, just contact us — we'll get back to you quickly.
-            </p>
-            <p className="text-sm sm:text-base">
-              📧 Support: <a href="mailto:prestigiousprepeducation@gmail.com" className="text-primary hover:underline">prestigiousprepeducation@gmail.com</a>
-            </p>
-          </div>
-
-          <div className="border-t pt-4 mt-6">
-            <p className="font-semibold mb-2">💵 Payment Info</p>
-            <p className="text-sm sm:text-base text-muted-foreground mb-2">
-              Payments are processed within 24–48 hours (often same-day).
-            </p>
-            <p className="text-sm sm:text-base text-muted-foreground">
-              You can receive your payment via PayPal, Wise, or Bank Transfer.
-            </p>
+          <div className="prose prose-sm max-w-none prose-headings:text-foreground prose-p:text-muted-foreground prose-strong:text-foreground prose-strong:font-bold prose-em:italic prose-ul:text-muted-foreground prose-ol:text-muted-foreground prose-li:text-muted-foreground prose-a:text-primary prose-a:underline">
+            <ReactMarkdown>{welcomeText || "Loading instructions..."}</ReactMarkdown>
           </div>
         </Card>
 
