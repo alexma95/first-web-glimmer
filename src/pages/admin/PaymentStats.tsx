@@ -3,6 +3,13 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader2 } from "lucide-react";
 
+interface PaymentMethodSubmissions {
+  paypal: number;
+  wise: number;
+  bank_wire: number;
+  total: number;
+}
+
 interface PaymentStatsData {
   totalAmount: number;
   totalCount: number;
@@ -15,6 +22,7 @@ interface PaymentStatsData {
     A: { count: number; amount: number };
     M: { count: number; amount: number };
   };
+  submissions: PaymentMethodSubmissions;
 }
 
 export function PaymentStats() {
@@ -28,6 +36,26 @@ export function PaymentStats() {
   const loadStats = async () => {
     try {
       setLoading(true);
+      
+      // Fetch payment info submissions count by method
+      const { data: submissionsData, error: submissionsError } = await supabase
+        .from("payment_info")
+        .select("method");
+      
+      if (submissionsError) throw submissionsError;
+      
+      const submissions: PaymentMethodSubmissions = {
+        paypal: 0,
+        wise: 0,
+        bank_wire: 0,
+        total: submissionsData?.length || 0,
+      };
+      
+      submissionsData?.forEach((item: any) => {
+        if (item.method === 'paypal') submissions.paypal++;
+        else if (item.method === 'wise') submissions.wise++;
+        else if (item.method === 'bank_wire') submissions.bank_wire++;
+      });
       
       // Fetch all payment records with payment method info
       const { data, error } = await supabase
@@ -56,6 +84,7 @@ export function PaymentStats() {
           A: { count: 0, amount: 0 },
           M: { count: 0, amount: 0 },
         },
+        submissions,
       };
 
       data?.forEach((record: any) => {
@@ -112,21 +141,48 @@ export function PaymentStats() {
 
   return (
     <div className="space-y-4">
-      <Card>
-        <CardHeader>
-          <CardTitle>Payment Statistics</CardTitle>
-          <CardDescription>Overview of all payments made</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="grid gap-4 grid-cols-1 sm:grid-cols-2">
+      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2">
+        <Card>
+          <CardHeader>
+            <CardTitle>Payment Statistics</CardTitle>
+            <CardDescription>Overview of all payments made</CardDescription>
+          </CardHeader>
+          <CardContent>
             <div className="space-y-2">
               <p className="text-sm font-medium">Total Paid</p>
               <p className="text-3xl font-bold">${stats.totalAmount.toFixed(2)}</p>
               <p className="text-sm text-muted-foreground">{stats.totalCount} payments</p>
             </div>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Payment Info Submitted</CardTitle>
+            <CardDescription>Users who submitted payment details</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className="flex items-center justify-between">
+              <p className="text-sm font-medium">Total Submissions</p>
+              <p className="text-2xl font-bold">{stats.submissions.total}</p>
+            </div>
+            <div className="space-y-2 pt-2 border-t">
+              <div className="flex items-center justify-between">
+                <p className="text-sm text-muted-foreground">PayPal</p>
+                <p className="text-sm font-medium">{stats.submissions.paypal}</p>
+              </div>
+              <div className="flex items-center justify-between">
+                <p className="text-sm text-muted-foreground">Wise</p>
+                <p className="text-sm font-medium">{stats.submissions.wise}</p>
+              </div>
+              <div className="flex items-center justify-between">
+                <p className="text-sm text-muted-foreground">Bank Wire</p>
+                <p className="text-sm font-medium">{stats.submissions.bank_wire}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
 
       <div className="grid gap-4 grid-cols-1 sm:grid-cols-2">
         <Card>
