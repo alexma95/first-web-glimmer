@@ -359,15 +359,15 @@ export type Database = {
       clone_campaign:
         | { Args: { p_campaign_id: string }; Returns: string }
         | {
+            Args: { p_campaign_id: string; p_clone_products?: boolean }
+            Returns: string
+          }
+        | {
             Args: {
               p_campaign_id: string
               p_clone_products?: boolean
               p_clone_text_options?: boolean
             }
-            Returns: string
-          }
-        | {
-            Args: { p_campaign_id: string; p_clone_products?: boolean }
             Returns: string
           }
       find_duplicate_text_options: {

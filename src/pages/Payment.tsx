@@ -41,8 +41,14 @@ const Payment = () => {
         throw new Error("All fields are required for Bank Wire");
       }
 
-      // Insert payment info
-      const { error: paymentError } = await supabase.from("payment_info").insert({
+      // Check if payment info already exists for this enrollment
+      const { data: existingPayment } = await supabase
+        .from("payment_info")
+        .select("id")
+        .eq("enrollment_id", enrollmentId)
+        .maybeSingle();
+
+      const paymentData = {
         enrollment_id: enrollmentId,
         method,
         email: formData.email || null,
@@ -50,7 +56,32 @@ const Payment = () => {
         bank_account_number: formData.bankAccountNumber || null,
         bank_details: formData.bankDetails || null,
         address_full: formData.addressFull || null,
-      });
+      };
+
+      let paymentError;
+
+      if (existingPayment) {
+        // Update existing payment info - need to use delete + insert since UPDATE isn't allowed by RLS
+        const { error: deleteError } = await supabase
+          .from("payment_info")
+          .delete()
+          .eq("id", existingPayment.id);
+        
+        if (deleteError) throw deleteError;
+        
+        const { error: insertError } = await supabase
+          .from("payment_info")
+          .insert(paymentData);
+        
+        paymentError = insertError;
+      } else {
+        // Insert new payment info
+        const { error: insertError } = await supabase
+          .from("payment_info")
+          .insert(paymentData);
+        
+        paymentError = insertError;
+      }
 
       if (paymentError) throw paymentError;
 
