@@ -37,7 +37,7 @@ export function CampaignManager({ adminKey, onCampaignSelect }: CampaignManagerP
     loadCampaigns();
   }, []);
 
-  const loadCampaigns = async () => {
+  const loadCampaigns = async (preserveSelection = false) => {
     try {
       const { data } = await supabase
         .from("campaigns_new")
@@ -46,12 +46,24 @@ export function CampaignManager({ adminKey, onCampaignSelect }: CampaignManagerP
 
       if (data) {
         setCampaigns(data);
-        // Auto-select active campaign or first campaign
-        const active = data.find(c => c.status === 'active');
-        const toSelect = active || data[0];
-        if (toSelect) {
-          setSelectedCampaign(toSelect);
-          onCampaignSelect?.(toSelect.id);
+        
+        // If we should preserve selection and have a current selection, update it with fresh data
+        if (preserveSelection && selectedCampaign) {
+          const updated = data.find(c => c.id === selectedCampaign.id);
+          if (updated) {
+            setSelectedCampaign(updated);
+            return;
+          }
+        }
+        
+        // Only auto-select if no campaign is currently selected
+        if (!selectedCampaign) {
+          const active = data.find(c => c.status === 'active');
+          const toSelect = active || data[0];
+          if (toSelect) {
+            setSelectedCampaign(toSelect);
+            onCampaignSelect?.(toSelect.id);
+          }
         }
       }
     } catch (error) {
@@ -83,7 +95,7 @@ export function CampaignManager({ adminKey, onCampaignSelect }: CampaignManagerP
         description: "Campaign updated successfully",
       });
       
-      loadCampaigns();
+      loadCampaigns(true);
     } catch (error) {
       console.error("Error:", error);
       toast({
@@ -153,7 +165,7 @@ export function CampaignManager({ adminKey, onCampaignSelect }: CampaignManagerP
         description: `Campaign cloned${cloneProducts ? ' with products' : ''}!`,
       });
 
-      loadCampaigns();
+      loadCampaigns(true);
     } catch (error) {
       console.error("Error:", error);
       toast({
@@ -215,7 +227,11 @@ export function CampaignManager({ adminKey, onCampaignSelect }: CampaignManagerP
   };
 
   const getShareableUrl = (campaignId: string) => {
-    return `${window.location.origin}/c/${campaignId}`;
+    // Use production domain if available, otherwise fall back to current origin
+    const origin = window.location.hostname.includes('lovable.app') 
+      ? window.location.origin 
+      : 'https://bookreviewgig.lovable.app';
+    return `${origin}/c/${campaignId}`;
   };
 
   if (campaigns.length === 0) {
