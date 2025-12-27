@@ -215,26 +215,26 @@ export function Dashboard({ adminKey }: DashboardProps) {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <Card className="p-6">
-          <h3 className="text-sm font-medium text-muted-foreground">Total Signups</h3>
-          <p className="text-3xl font-bold mt-2">{stats.totalEnrollments}</p>
+    <div className="space-y-4 sm:space-y-6">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
+        <Card className="p-4 sm:p-6">
+          <h3 className="text-xs sm:text-sm font-medium text-muted-foreground">Total Signups</h3>
+          <p className="text-2xl sm:text-3xl font-bold mt-1 sm:mt-2">{stats.totalEnrollments}</p>
         </Card>
 
-        <Card className="p-6">
-          <h3 className="text-sm font-medium text-muted-foreground">Completed Submissions</h3>
-          <p className="text-3xl font-bold mt-2">{stats.completedSubmissions}</p>
+        <Card className="p-4 sm:p-6">
+          <h3 className="text-xs sm:text-sm font-medium text-muted-foreground">Completed</h3>
+          <p className="text-2xl sm:text-3xl font-bold mt-1 sm:mt-2">{stats.completedSubmissions}</p>
         </Card>
 
-        <Card className="p-6">
-          <h3 className="text-sm font-medium text-muted-foreground">Available Texts</h3>
-          <p className="text-3xl font-bold mt-2">{stats.availableTexts}</p>
+        <Card className="p-4 sm:p-6">
+          <h3 className="text-xs sm:text-sm font-medium text-muted-foreground">Available Texts</h3>
+          <p className="text-2xl sm:text-3xl font-bold mt-1 sm:mt-2">{stats.availableTexts}</p>
         </Card>
 
-        <Card className="p-6">
-          <h3 className="text-sm font-medium text-muted-foreground">Active Products</h3>
-          <p className="text-3xl font-bold mt-2">{stats.activeProducts}</p>
+        <Card className="p-4 sm:p-6">
+          <h3 className="text-xs sm:text-sm font-medium text-muted-foreground">Active Products</h3>
+          <p className="text-2xl sm:text-3xl font-bold mt-1 sm:mt-2">{stats.activeProducts}</p>
         </Card>
       </div>
 

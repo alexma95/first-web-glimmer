@@ -430,23 +430,23 @@ export function CampaignManager({ adminKey, onCampaignSelect }: CampaignManagerP
                   onChange={(e) => setCloneWithTextOptions(e.target.checked)}
                   className="rounded"
                 />
-                <Label htmlFor="clone_text_options">Include text options when cloning</Label>
+                <Label htmlFor="clone_text_options" className="text-sm">Include text options when cloning</Label>
               </div>
 
-              <div className="flex gap-3 flex-wrap">
-                <Button onClick={handleSave} disabled={loading}>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:flex gap-2 sm:gap-3">
+                <Button onClick={handleSave} disabled={loading} className="w-full lg:w-auto">
                   {loading ? "Saving..." : "Save Campaign"}
                 </Button>
-                <Button onClick={() => handleClone(true)} variant="outline" disabled={loading}>
+                <Button onClick={() => handleClone(true)} variant="outline" disabled={loading} className="w-full lg:w-auto text-sm">
                   Clone with Products
                 </Button>
-                <Button onClick={() => handleClone(false)} variant="outline" disabled={loading}>
+                <Button onClick={() => handleClone(false)} variant="outline" disabled={loading} className="w-full lg:w-auto text-sm">
                   Clone without Products
                 </Button>
-                <Button onClick={handleDelete} variant="destructive" disabled={loading}>
+                <Button onClick={handleDelete} variant="destructive" disabled={loading} className="w-full lg:w-auto">
                   <Trash2 className="w-4 h-4 mr-2" />
-                 Delete Campaign
-              </Button>
+                  Delete
+                </Button>
               </div>
             </div>
           </div>
