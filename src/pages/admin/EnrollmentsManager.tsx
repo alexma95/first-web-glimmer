@@ -55,8 +55,8 @@ export function EnrollmentsManager({ adminKey }: EnrollmentsManagerProps) {
       let query = supabase
         .from("enrollments")
         .select(`
-          *, 
-          campaigns_new(name, id),
+          *,
+          campaigns_new(name, id, support_email),
           payment_records(paid_at, notes),
           assignments(submitted_at, proof_file_id, files(storage_key, mime_type)),
           payment_info(method, email, full_name, bank_account_number, bank_details, address_full)
@@ -339,24 +339,43 @@ export function EnrollmentsManager({ adminKey }: EnrollmentsManagerProps) {
 
   const handleExportCSV = async () => {
     try {
-      // Fetch all enrollment data with assignments and payment info
-      const { data: fullData } = await supabase
+      // Fetch enrollment data with assignments and payment info - filtered by selected campaign
+      let query = supabase
         .from("enrollments")
         .select(`
           *,
           campaigns_new(name),
           assignments:assignments(*, products_new(title, position), files(storage_key)),
-          payment_info(*)
+          payment_info(*),
+          payment_records(paid_at, amount, account, notes)
         `)
         .order("created_at", { ascending: false });
 
-      if (!fullData) return;
+      // Apply campaign filter if selected
+      if (selectedCampaign !== "all") {
+        query = query.eq("campaign_id", selectedCampaign);
+      }
+
+      const { data: fullData } = await query;
+
+      if (!fullData || fullData.length === 0) {
+        toast({
+          title: "No data",
+          description: "No enrollments found to export",
+          variant: "destructive",
+        });
+        return;
+      }
 
       const headers = [
         "Email",
         "Campaign",
         "State",
         "Created At",
+        "Paid",
+        "Payment Amount",
+        "Payment Account",
+        "Paid At",
         "Payment Method",
         "Payment Email",
         "Full Name",
@@ -391,11 +410,19 @@ export function EnrollmentsManager({ adminKey }: EnrollmentsManagerProps) {
           ? e.payment_info[0] 
           : null;
 
+        // Get payment records
+        const isPaid = e.payment_records && e.payment_records.length > 0;
+        const latestPayment = isPaid ? e.payment_records[0] : null;
+
         const row = [
           e.email,
           e.campaigns_new?.name || "",
           e.state,
           format(new Date(e.created_at), "yyyy-MM-dd HH:mm"),
+          isPaid ? "Yes" : "No",
+          latestPayment?.amount ? `$${parseFloat(latestPayment.amount).toFixed(2)}` : "",
+          latestPayment?.account || "",
+          latestPayment?.paid_at ? format(new Date(latestPayment.paid_at), "yyyy-MM-dd HH:mm") : "",
           paymentInfo?.method || "",
           paymentInfo?.email || "",
           paymentInfo?.full_name || "",
@@ -427,12 +454,17 @@ export function EnrollmentsManager({ adminKey }: EnrollmentsManagerProps) {
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `enrollments-full-${format(new Date(), "yyyy-MM-dd")}.csv`;
+      
+      // Include campaign name in filename if filtered
+      const campaignName = selectedCampaign !== "all" 
+        ? campaigns.find(c => c.id === selectedCampaign)?.name?.replace(/[^a-zA-Z0-9]/g, '-') || 'campaign'
+        : 'all-campaigns';
+      a.download = `enrollments-${campaignName}-${format(new Date(), "yyyy-MM-dd")}.csv`;
       a.click();
 
       toast({
         title: "Success",
-        description: "CSV exported successfully",
+        description: `Exported ${fullData.length} enrollments to CSV`,
       });
     } catch (error) {
       console.error("Error:", error);

@@ -44,28 +44,28 @@ const Confirmation = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5 py-16">
-      <div className="container max-w-2xl mx-auto px-4">
-        <Card className="p-8 text-center">
-          <CheckCircle2 className="w-16 h-16 text-green-500 mx-auto mb-6" />
+    <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5 py-8 sm:py-16">
+      <div className="container max-w-2xl mx-auto px-4 sm:px-6">
+        <Card className="p-5 sm:p-8 text-center">
+          <CheckCircle2 className="w-12 h-12 sm:w-16 sm:h-16 text-green-500 mx-auto mb-4 sm:mb-6" />
           
-          <h1 className="text-3xl font-bold mb-4">Thank You!</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold mb-3 sm:mb-4">Thank You!</h1>
           
-          <div className="space-y-4 text-left mb-8">
-            <p className="text-lg">
+          <div className="space-y-3 sm:space-y-4 text-left mb-6 sm:mb-8">
+            <p className="text-base sm:text-lg">
               Payment processed within 2 business days (often is immediate) after proof submission.
             </p>
 
-            <div className="bg-muted p-4 rounded-lg space-y-2">
-              <p><strong>Your email:</strong> {email}</p>
-              <p><strong>Payment method:</strong> {paymentMethod}</p>
+            <div className="bg-muted p-3 sm:p-4 rounded-lg space-y-2 text-sm sm:text-base">
+              <p className="break-all"><strong>Your email:</strong> {email}</p>
+              <p><strong>Payment method:</strong> <span className="uppercase">{paymentMethod}</span></p>
               <p><strong>Status:</strong> Awaiting review</p>
             </div>
           </div>
 
-          <p className="text-muted-foreground">
+          <p className="text-sm sm:text-base text-muted-foreground">
             Need help? Contact:{" "}
-            <a href="mailto:prestigiousprepeducation@gmail.com" className="text-primary underline">
+            <a href="mailto:prestigiousprepeducation@gmail.com" className="text-primary underline break-all">
               prestigiousprepeducation@gmail.com
             </a>
           </p>
