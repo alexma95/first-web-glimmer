@@ -89,8 +89,19 @@ export function TextOptionsManager({ adminKey, campaignId }: TextOptionsManagerP
         },
       });
 
-      if (error) throw error;
-      if (data?.error) throw new Error(data.error);
+      if (error) {
+        // Check for auth errors specifically
+        if (error.message?.includes('401') || error.message?.includes('Unauthorized')) {
+          throw new Error('Invalid admin key. Please logout and login again with the correct key.');
+        }
+        throw error;
+      }
+      if (data?.error) {
+        if (data.error === 'Unauthorized') {
+          throw new Error('Invalid admin key. Please logout and login again with the correct key.');
+        }
+        throw new Error(data.error);
+      }
 
       toast({
         title: "Success",
