@@ -14,13 +14,14 @@ Deno.serve(async (req) => {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const adminKey = Deno.env.get('ADMIN_KEY');
+    const adminKey2 = Deno.env.get('ADMIN_KEY_2');
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     const { action, adminKey: providedKey } = await req.json();
 
     // Verify admin key
-    if (providedKey !== adminKey) {
+    if (providedKey !== adminKey && providedKey !== adminKey2) {
       console.log('Invalid admin key provided');
       return new Response(
         JSON.stringify({ error: 'Unauthorized' }),
