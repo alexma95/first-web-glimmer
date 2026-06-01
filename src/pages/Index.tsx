@@ -323,7 +323,7 @@ const Index = () => {
             </div>
             <div className="flex items-start gap-3">
               <span className="text-primary mt-1">✔</span>
-              <p className="text-sm sm:text-base">Fast payouts via PayPal, Wise, or Bank Transfer</p>
+              <p className="text-sm sm:text-base">Fast payouts via PayPal</p>
             </div>
             <div className="flex items-start gap-3">
               <span className="text-primary mt-1">✔</span>

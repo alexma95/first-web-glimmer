@@ -903,7 +903,7 @@ export function EnrollmentsManager({ adminKey }: EnrollmentsManagerProps) {
                     className="mt-2"
                   />
                   <p className="text-sm text-muted-foreground mt-1">
-                    Wise & PayPal use Account A, Bank Wire can use either account
+                    PayPal uses Account A by default
                   </p>
                 </div>
                 <Button
