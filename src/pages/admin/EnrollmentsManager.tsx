@@ -644,6 +644,31 @@ export function EnrollmentsManager({ adminKey }: EnrollmentsManagerProps) {
               <Download className="w-4 h-4 mr-2" />
               Export
             </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" className="w-full sm:w-auto">
+                  <Mail className="w-4 h-4 mr-2" />
+                  Export Emails
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-64">
+                <DropdownMenuLabel>
+                  {selectedCampaign === "all"
+                    ? "All campaigns"
+                    : campaigns.find((c) => c.id === selectedCampaign)?.name}
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => handleExportEmails("paid")}>
+                  Paid people
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleExportEmails("submitted")}>
+                  Submitted (not yet paid)
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleExportEmails("no_submission")}>
+                  Registered, never submitted
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
 
