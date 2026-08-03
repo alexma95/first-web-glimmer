@@ -6,7 +6,15 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Eye, Download, Filter, Copy, CheckCircle, Trash2 } from "lucide-react";
+import { Eye, Download, Filter, Copy, CheckCircle, Trash2, Mail } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
@@ -476,6 +484,126 @@ export function EnrollmentsManager({ adminKey }: EnrollmentsManagerProps) {
     }
   };
 
+  const downloadCSV = (headers: string[], rows: (string | number)[][], filename: string) => {
+    const csv = [headers, ...rows]
+      .map((row) => row.map((cell) => `"${String(cell ?? "").replace(/"/g, '""')}"`).join(","))
+      .join("\n");
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const handleExportEmails = async (group: "paid" | "submitted" | "no_submission") => {
+    try {
+      let query = supabase
+        .from("enrollments")
+        .select(`
+          email,
+          state,
+          created_at,
+          campaigns_new(name),
+          assignments(submitted_at, status),
+          payment_info(email),
+          payment_records(paid_at, amount, account)
+        `)
+        .order("created_at", { ascending: false });
+
+      if (selectedCampaign !== "all") {
+        query = query.eq("campaign_id", selectedCampaign);
+      }
+
+      const { data, error } = await query;
+      if (error) throw error;
+
+      const all = data || [];
+      const isPaid = (e: any) => (e.payment_records || []).length > 0;
+      const hasSubmitted = (e: any) =>
+        (e.assignments || []).some((a: any) => a.submitted_at) ||
+        (e.payment_info || []).length > 0 ||
+        ["submitted", "approved", "paid"].includes(e.state);
+
+      let filtered: any[] = [];
+      if (group === "paid") filtered = all.filter((e) => isPaid(e));
+      else if (group === "submitted") filtered = all.filter((e) => hasSubmitted(e) && !isPaid(e));
+      else filtered = all.filter((e) => !hasSubmitted(e) && !isPaid(e));
+
+      // De-duplicate emails
+      const seen = new Set<string>();
+      filtered = filtered.filter((e) => {
+        const key = (e.email || "").toLowerCase();
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
+
+      if (filtered.length === 0) {
+        toast({
+          title: "No data",
+          description: "No enrollments match that group",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const headers = [
+        "Email",
+        "PayPal Email",
+        "Campaign",
+        "State",
+        "Registered At",
+        "Paid",
+        "Paid At",
+        "Amount",
+        "Account",
+      ];
+
+      const rows = filtered.map((e: any) => {
+        const latest = (e.payment_records || [])[0];
+        return [
+          e.email,
+          (e.payment_info || [])[0]?.email || "",
+          e.campaigns_new?.name || "",
+          e.state,
+          format(new Date(e.created_at), "yyyy-MM-dd HH:mm"),
+          isPaid(e) ? "Yes" : "No",
+          latest?.paid_at ? format(new Date(latest.paid_at), "yyyy-MM-dd HH:mm") : "",
+          latest?.amount ? `$${parseFloat(latest.amount).toFixed(2)}` : "",
+          latest?.account || "",
+        ];
+      });
+
+      const campaignName =
+        selectedCampaign !== "all"
+          ? campaigns.find((c) => c.id === selectedCampaign)?.name?.replace(/[^a-zA-Z0-9]/g, "-") || "campaign"
+          : "all-campaigns";
+      const groupLabel =
+        group === "paid" ? "paid" : group === "submitted" ? "submitted-unpaid" : "registered-no-submission";
+
+      downloadCSV(headers, rows, `emails-${groupLabel}-${campaignName}-${format(new Date(), "yyyy-MM-dd")}.csv`);
+
+      // Also copy the plain email list to clipboard for convenience
+      await navigator.clipboard
+        .writeText(filtered.map((e) => e.email).join("\n"))
+        .catch(() => undefined);
+
+      toast({
+        title: "Success",
+        description: `Exported ${filtered.length} emails (also copied to clipboard)`,
+      });
+    } catch (err) {
+      console.error("Error:", err);
+      toast({
+        title: "Error",
+        description: "Failed to export emails",
+        variant: "destructive",
+      });
+    }
+  };
+
   const getStatusBadge = (status: string) => {
     const variants: Record<string, any> = {
       assigned: "secondary",
@@ -524,6 +652,31 @@ export function EnrollmentsManager({ adminKey }: EnrollmentsManagerProps) {
               <Download className="w-4 h-4 mr-2" />
               Export
             </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" className="w-full sm:w-auto">
+                  <Mail className="w-4 h-4 mr-2" />
+                  Export Emails
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-64">
+                <DropdownMenuLabel>
+                  {selectedCampaign === "all"
+                    ? "All campaigns"
+                    : campaigns.find((c) => c.id === selectedCampaign)?.name}
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => handleExportEmails("paid")}>
+                  Paid people
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleExportEmails("submitted")}>
+                  Submitted (not yet paid)
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleExportEmails("no_submission")}>
+                  Registered, never submitted
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
 
