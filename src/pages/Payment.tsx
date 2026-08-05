@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
+import { gigApi } from "@/lib/gigApi";
 
 const Payment = () => {
   const { enrollmentId } = useParams<{ enrollmentId: string }>();
@@ -25,67 +25,7 @@ const Payment = () => {
         throw new Error("Email is required for PayPal");
       }
 
-      const { data: existingPayment } = await supabase
-        .from("payment_info")
-        .select("id")
-        .eq("enrollment_id", enrollmentId)
-        .maybeSingle();
-
-      const paymentData = {
-        enrollment_id: enrollmentId,
-        method: "paypal" as const,
-        email,
-        full_name: null,
-        bank_account_number: null,
-        bank_details: null,
-        address_full: null,
-      };
-
-      let paymentError;
-
-      if (existingPayment) {
-        const { error: deleteError } = await supabase
-          .from("payment_info")
-          .delete()
-          .eq("id", existingPayment.id);
-
-        if (deleteError) throw deleteError;
-
-        const { error: insertError } = await supabase
-          .from("payment_info")
-          .insert(paymentData);
-
-        paymentError = insertError;
-      } else {
-        const { error: insertError } = await supabase
-          .from("payment_info")
-          .insert(paymentData);
-
-        paymentError = insertError;
-      }
-
-      if (paymentError) throw paymentError;
-
-      const { error: updateError } = await supabase
-        .from("enrollments")
-        .update({ state: "submitted" })
-        .eq("id", enrollmentId);
-
-      if (updateError) throw updateError;
-
-      const { data: enrollment } = await supabase
-        .from("enrollments")
-        .select("campaigns_new(name)")
-        .eq("id", enrollmentId)
-        .single();
-
-      supabase.functions.invoke('notify-submission', {
-        body: {
-          enrollmentId,
-          email,
-          campaignName: enrollment?.campaigns_new?.name
-        }
-      }).catch(err => console.error('Notification error:', err));
+      await gigApi("submit_payment", { enrollmentId, email });
 
       toast({
         title: "✅ Thank you!",

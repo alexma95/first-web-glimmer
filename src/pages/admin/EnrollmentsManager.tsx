@@ -5,7 +5,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
+import { adminDb } from "@/lib/adminDb";
 import { Eye, Download, Filter, Copy, CheckCircle, Trash2, Mail } from "lucide-react";
 import {
   DropdownMenu,
@@ -26,6 +26,7 @@ interface EnrollmentsManagerProps {
 }
 
 export function EnrollmentsManager({ adminKey }: EnrollmentsManagerProps) {
+  const db = adminDb(adminKey);
   const { toast } = useToast();
   const [enrollments, setEnrollments] = useState<any[]>([]);
   const [selectedEnrollment, setSelectedEnrollment] = useState<any>(null);
@@ -47,7 +48,7 @@ export function EnrollmentsManager({ adminKey }: EnrollmentsManagerProps) {
 
   const loadCampaigns = async () => {
     try {
-      const { data } = await supabase
+      const { data } = await db
         .from("campaigns_new")
         .select("id, name")
         .order("name");
@@ -60,7 +61,7 @@ export function EnrollmentsManager({ adminKey }: EnrollmentsManagerProps) {
 
   const loadEnrollments = async () => {
     try {
-      let query = supabase
+      let query = db
         .from("enrollments")
         .select(`
           *,
@@ -117,24 +118,24 @@ export function EnrollmentsManager({ adminKey }: EnrollmentsManagerProps) {
 
   const loadEnrollmentDetail = async (enrollmentId: string) => {
     try {
-      const { data: enrollment } = await supabase
+      const { data: enrollment } = await db
         .from("enrollments")
         .select("*, campaigns_new(name)")
         .eq("id", enrollmentId)
         .single();
 
-      const { data: assignments } = await supabase
+      const { data: assignments } = await db
         .from("assignments")
         .select("*, products_new(title), files(*)")
         .eq("enrollment_id", enrollmentId);
 
-      const { data: payment } = await supabase
+      const { data: payment } = await db
         .from("payment_info")
         .select("*")
         .eq("enrollment_id", enrollmentId)
         .maybeSingle();
 
-      const { data: paymentRecords } = await supabase
+      const { data: paymentRecords } = await db
         .from("payment_records")
         .select("*")
         .eq("enrollment_id", enrollmentId)
@@ -160,7 +161,7 @@ export function EnrollmentsManager({ adminKey }: EnrollmentsManagerProps) {
 
   const handleAcceptProof = async (assignmentId: string) => {
     try {
-      const { error } = await supabase
+      const { error } = await db
         .from("assignments")
         .update({ status: "accepted", notes: null })
         .eq("id", assignmentId);
@@ -190,7 +191,7 @@ export function EnrollmentsManager({ adminKey }: EnrollmentsManagerProps) {
     if (!note) return;
 
     try {
-      const { error } = await supabase
+      const { error } = await db
         .from("assignments")
         .update({ status: "rejected", notes: note })
         .eq("id", assignmentId);
@@ -229,7 +230,7 @@ export function EnrollmentsManager({ adminKey }: EnrollmentsManagerProps) {
 
     try {
       // Insert payment record with amount and account
-      const { error: recordError } = await supabase
+      const { error: recordError } = await db
         .from("payment_records")
         .insert({
           enrollment_id: enrollmentId,
@@ -241,7 +242,7 @@ export function EnrollmentsManager({ adminKey }: EnrollmentsManagerProps) {
       if (recordError) throw recordError;
 
       // Update enrollment state
-      const { error: stateError } = await supabase
+      const { error: stateError } = await db
         .from("enrollments")
         .update({ state: "paid" })
         .eq("id", enrollmentId);
@@ -279,12 +280,12 @@ export function EnrollmentsManager({ adminKey }: EnrollmentsManagerProps) {
 
     try {
       // Delete related data first
-      await supabase.from("assignments").delete().eq("enrollment_id", enrollmentId);
-      await supabase.from("payment_info").delete().eq("enrollment_id", enrollmentId);
-      await supabase.from("payment_records").delete().eq("enrollment_id", enrollmentId);
+      await db.from("assignments").delete().eq("enrollment_id", enrollmentId);
+      await db.from("payment_info").delete().eq("enrollment_id", enrollmentId);
+      await db.from("payment_records").delete().eq("enrollment_id", enrollmentId);
       
       // Delete the enrollment
-      const { error } = await supabase
+      const { error } = await db
         .from("enrollments")
         .delete()
         .eq("id", enrollmentId);
@@ -312,7 +313,7 @@ export function EnrollmentsManager({ adminKey }: EnrollmentsManagerProps) {
     if (!confirm("Are you sure you want to delete this assignment?")) return;
 
     try {
-      const { error } = await supabase
+      const { error } = await db
         .from("assignments")
         .delete()
         .eq("id", assignmentId);
@@ -348,7 +349,7 @@ export function EnrollmentsManager({ adminKey }: EnrollmentsManagerProps) {
   const handleExportCSV = async () => {
     try {
       // Fetch enrollment data with assignments and payment info - filtered by selected campaign
-      let query = supabase
+      let query = db
         .from("enrollments")
         .select(`
           *,
@@ -499,7 +500,7 @@ export function EnrollmentsManager({ adminKey }: EnrollmentsManagerProps) {
 
   const handleExportEmails = async (group: "paid" | "submitted" | "no_submission") => {
     try {
-      let query = supabase
+      let query = db
         .from("enrollments")
         .select(`
           email,
@@ -783,9 +784,7 @@ export function EnrollmentsManager({ adminKey }: EnrollmentsManagerProps) {
                             <button
                               key={assignment.id}
                               onClick={async () => {
-                                const { data } = await supabase.storage
-                                  .from("proofs")
-                                  .createSignedUrl(assignment.files.storage_key, 3600);
+                                const { data } = await db.createSignedUrl(assignment.files.storage_key, 3600);
                                 if (data?.signedUrl) window.open(data.signedUrl, "_blank");
                               }}
                               className="relative group"
@@ -906,9 +905,7 @@ export function EnrollmentsManager({ adminKey }: EnrollmentsManagerProps) {
                                 size="sm"
                                 variant="outline"
                                 onClick={async () => {
-                                  const { data } = await supabase.storage
-                                    .from("proofs")
-                                    .createSignedUrl(assignment.files.storage_key, 3600);
+                                  const { data } = await db.createSignedUrl(assignment.files.storage_key, 3600);
                                   if (data?.signedUrl) window.open(data.signedUrl, "_blank");
                                 }}
                               >

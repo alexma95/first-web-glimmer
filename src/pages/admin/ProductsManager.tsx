@@ -7,7 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
+import { adminDb } from "@/lib/adminDb";
 import { Pencil, Trash2, Plus } from "lucide-react";
 
 interface ProductsManagerProps {
@@ -16,6 +16,7 @@ interface ProductsManagerProps {
 }
 
 export function ProductsManager({ adminKey, campaignId }: ProductsManagerProps) {
+  const db = adminDb(adminKey);
   const { toast } = useToast();
   const [products, setProducts] = useState<any[]>([]);
   const [editProduct, setEditProduct] = useState<any>(null);
@@ -31,7 +32,7 @@ export function ProductsManager({ adminKey, campaignId }: ProductsManagerProps) 
     if (!campaignId) return;
     
     try {
-      const { data } = await supabase
+      const { data } = await db
         .from("products_new")
         .select("*")
         .eq("campaign_id", campaignId)
@@ -48,7 +49,7 @@ export function ProductsManager({ adminKey, campaignId }: ProductsManagerProps) 
 
     try {
       if (editProduct.id) {
-        const { error } = await supabase
+        const { error } = await db
           .from("products_new")
           .update({
             title: editProduct.title,
@@ -61,7 +62,7 @@ export function ProductsManager({ adminKey, campaignId }: ProductsManagerProps) 
 
         if (error) throw error;
       } else {
-        const { error } = await supabase
+        const { error } = await db
           .from("products_new")
           .insert({
             campaign_id: campaignId,
@@ -95,7 +96,7 @@ export function ProductsManager({ adminKey, campaignId }: ProductsManagerProps) 
 
   const handleDelete = async (id: string) => {
     try {
-      const { error } = await supabase
+      const { error } = await db
         .from("products_new")
         .delete()
         .eq("id", id);

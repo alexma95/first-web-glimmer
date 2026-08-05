@@ -127,7 +127,7 @@ const Admin = () => {
           </TabsContent>
 
           <TabsContent value="payments">
-            <PaymentStats />
+            <PaymentStats adminKey={adminKey} />
           </TabsContent>
         </Tabs>
       </div>

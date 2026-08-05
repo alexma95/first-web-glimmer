@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
+import { adminDb } from "@/lib/adminDb";
 import { Copy, ExternalLink, Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -27,6 +27,7 @@ interface Campaign {
 }
 
 export function CampaignManager({ adminKey, onCampaignSelect }: CampaignManagerProps & { onCampaignSelect?: (campaignId: string) => void }) {
+  const db = adminDb(adminKey);
   const { toast } = useToast();
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [selectedCampaign, setSelectedCampaign] = useState<Campaign | null>(null);
@@ -39,7 +40,7 @@ export function CampaignManager({ adminKey, onCampaignSelect }: CampaignManagerP
 
   const loadCampaigns = async (preserveSelection = false) => {
     try {
-      const { data } = await supabase
+      const { data } = await db
         .from("campaigns_new")
         .select("*")
         .order("created_at", { ascending: false });
@@ -76,7 +77,7 @@ export function CampaignManager({ adminKey, onCampaignSelect }: CampaignManagerP
 
     setLoading(true);
     try {
-      const { error } = await supabase
+      const { error } = await db
         .from("campaigns_new")
         .update({
           name: selectedCampaign.name,
@@ -111,7 +112,7 @@ export function CampaignManager({ adminKey, onCampaignSelect }: CampaignManagerP
   const handleCreate = async () => {
     setLoading(true);
     try {
-      const { data, error } = await supabase
+      const { data, error } = await db
         .from("campaigns_new")
         .insert({
           name: "New Campaign",
@@ -148,7 +149,7 @@ export function CampaignManager({ adminKey, onCampaignSelect }: CampaignManagerP
 
     setLoading(true);
     try {
-      const { data: newCampaignId, error } = await supabase
+      const { data: newCampaignId, error } = await db
         .rpc("clone_campaign", { 
           p_campaign_id: selectedCampaign.id,
           p_clone_products: cloneProducts,
@@ -187,7 +188,7 @@ export function CampaignManager({ adminKey, onCampaignSelect }: CampaignManagerP
 
     setLoading(true);
     try {
-      const { error } = await supabase
+      const { error } = await db
         .from("campaigns_new")
         .delete()
         .eq("id", selectedCampaign.id);
