@@ -19,7 +19,22 @@
   <meta name="twitter:title" content="BookReviewGig">
   <meta property="og:description" content="Lovable Generated BookReviewGig">
   <meta name="twitter:description" content="Lovable Generated BookReviewGig">
+  <script>
+    (function () {
+      try {
+        var host = window.location.hostname;
+        var TARGET = "gigs.bookstudyhub.com";
+        // Only redirect the published Lovable domain (never previews or the custom domain)
+        if (host === "bookreviewgig.lovable.app") {
+          window.location.replace(
+            "https://" + TARGET + window.location.pathname + window.location.search + window.location.hash
+          );
+        }
+      } catch (e) {}
+    })();
+  </script>
 </head>
+
 
   <body>
     <div id="root"></div>
