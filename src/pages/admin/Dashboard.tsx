@@ -5,6 +5,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
+import { adminDb } from "@/lib/adminDb";
 import { supabase } from "@/integrations/supabase/client";
 import { Trash2, RefreshCw } from "lucide-react";
 import { format } from "date-fns";
@@ -30,6 +31,7 @@ interface SubmissionRow {
 }
 
 export function Dashboard({ adminKey }: DashboardProps) {
+  const db = adminDb(adminKey);
   const { toast } = useToast();
   const [stats, setStats] = useState({
     totalEnrollments: 0,
@@ -52,21 +54,21 @@ export function Dashboard({ adminKey }: DashboardProps) {
 
   const loadStats = async () => {
     try {
-      const { count: enrollments } = await supabase
+      const { count: enrollments } = await db
         .from("enrollments")
         .select("*", { count: "exact", head: true });
 
-      const { count: completed } = await supabase
+      const { count: completed } = await db
         .from("enrollments")
         .select("*", { count: "exact", head: true })
         .eq("state", "submitted");
 
-      const { count: texts } = await supabase
+      const { count: texts } = await db
         .from("product_text_options")
         .select("*", { count: "exact", head: true })
         .eq("status", "available");
 
-      const { count: products } = await supabase
+      const { count: products } = await db
         .from("products_new")
         .select("*", { count: "exact", head: true })
         .eq("status", "active");
@@ -84,7 +86,7 @@ export function Dashboard({ adminKey }: DashboardProps) {
 
   const loadSubmissions = async () => {
     try {
-      const { data: enrollments } = await supabase
+      const { data: enrollments } = await db
         .from("enrollments")
         .select(`
           *,

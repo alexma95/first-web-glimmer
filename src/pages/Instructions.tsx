@@ -5,6 +5,7 @@ import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { gigApi } from "@/lib/gigApi";
 import { ProductCard } from "@/components/ProductCard";
 import ReactMarkdown from "react-markdown";
 import { ArrowRight } from "lucide-react";
@@ -40,56 +41,13 @@ const Instructions = () => {
     if (!enrollmentId) return;
 
     try {
-      console.log('Loading enrollment data for:', enrollmentId);
-      
-      // Get enrollment with campaign - FORCE FRESH DATA
-      const { data: enrollment, error: enrollmentError } = await supabase
-        .from("enrollments")
-        .select("*, campaigns_new(*)")
-        .eq("id", enrollmentId)
-        .single();
+      const data = await gigApi<{
+        welcomeText: string;
+        assignments: Assignment[];
+      }>("instructions", { enrollmentId });
 
-      if (enrollmentError) throw enrollmentError;
-
-      setWelcomeText(enrollment.campaigns_new.welcome_text_md);
-
-      // Get assignments with products - FORCE FRESH DATA
-      const { data: assignmentsData, error: assignmentsError } = await supabase
-        .from("assignments")
-        .select("*, products_new(*)")
-        .eq("enrollment_id", enrollmentId)
-        .order("products_new(position)");
-
-      if (assignmentsError) throw assignmentsError;
-
-      console.log('Raw assignments loaded:', assignmentsData);
-
-      // For assignments with empty text snapshots, fetch current text options
-      const enrichedAssignments = await Promise.all(
-        (assignmentsData || []).map(async (assignment) => {
-          if (!assignment.text_snapshot_md || assignment.text_snapshot_md.trim() === '') {
-            console.log('Empty text found for assignment:', assignment.id, 'text_option_id:', assignment.text_option_id);
-            
-            if (assignment.text_option_id) {
-              const { data: textOption, error: textError } = await supabase
-                .from("product_text_options")
-                .select("text_md")
-                .eq("id", assignment.text_option_id)
-                .single();
-              
-              console.log('Fetched text option:', textOption, 'error:', textError);
-              
-              if (textOption && textOption.text_md) {
-                return { ...assignment, text_snapshot_md: textOption.text_md };
-              }
-            }
-          }
-          return assignment;
-        })
-      );
-
-      console.log('Enriched assignments:', enrichedAssignments);
-      setAssignments(enrichedAssignments);
+      setWelcomeText(data.welcomeText || "");
+      setAssignments(data.assignments || []);
     } catch (error) {
       console.error("Error:", error);
       toast({
@@ -114,42 +72,29 @@ const Instructions = () => {
 
     setUploadedFiles((prev) => ({ ...prev, [assignmentId]: file }));
 
-    // Auto-upload immediately
     try {
-      const fileExt = file.name.split(".").pop();
-      const filePath = `${enrollmentId}/${assignmentId}.${fileExt}`;
+      const fileExt = (file.name.split(".").pop() || "png").toLowerCase();
 
-      // Upload to storage
+      const { storageKey, path, token } = await gigApi<{
+        storageKey: string;
+        path: string;
+        token: string;
+      }>("proof_upload_url", { enrollmentId, assignmentId, ext: fileExt });
+
       const { error: uploadError } = await supabase.storage
         .from("proofs")
-        .upload(filePath, file, { upsert: true });
+        .uploadToSignedUrl(path, token, file, { upsert: true });
 
       if (uploadError) throw uploadError;
 
-      // Create file record
-      const { data: fileRecord, error: fileError } = await supabase
-        .from("files")
-        .insert({
-          storage_key: filePath,
-          original_filename: file.name,
-          mime_type: file.type,
-          size_bytes: file.size,
-        })
-        .select()
-        .single();
-
-      if (fileError) throw fileError;
-
-      // Update assignment
-      const { error: updateError } = await supabase
-        .from("assignments")
-        .update({
-          proof_file_id: fileRecord.id,
-          status: "proof_uploaded",
-        })
-        .eq("id", assignmentId);
-
-      if (updateError) throw updateError;
+      await gigApi("record_proof", {
+        enrollmentId,
+        assignmentId,
+        storageKey,
+        filename: file.name,
+        mimeType: file.type || "application/octet-stream",
+        sizeBytes: file.size,
+      });
 
       toast({
         title: "Success",

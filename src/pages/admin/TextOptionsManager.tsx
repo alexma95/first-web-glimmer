@@ -9,6 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
+import { adminDb } from "@/lib/adminDb";
 import { supabase } from "@/integrations/supabase/client";
 
 interface TextOptionsManagerProps {
@@ -17,6 +18,7 @@ interface TextOptionsManagerProps {
 }
 
 export function TextOptionsManager({ adminKey, campaignId }: TextOptionsManagerProps) {
+  const db = adminDb(adminKey);
   const { toast } = useToast();
   const [products, setProducts] = useState<any[]>([]);
   const [selectedProductId, setSelectedProductId] = useState<string>("");
@@ -42,7 +44,7 @@ export function TextOptionsManager({ adminKey, campaignId }: TextOptionsManagerP
     if (!campaignId) return;
     
     try {
-      const { data } = await supabase
+      const { data } = await db
         .from("products_new")
         .select("*")
         .eq("campaign_id", campaignId)
@@ -59,7 +61,7 @@ export function TextOptionsManager({ adminKey, campaignId }: TextOptionsManagerP
 
   const loadTextOptions = async () => {
     try {
-      const { data } = await supabase
+      const { data } = await db
         .from("product_text_options")
         .select("*")
         .eq("product_id", selectedProductId)

@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { CheckCircle2 } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import { gigApi } from "@/lib/gigApi";
 
 const Confirmation = () => {
   const { enrollmentId } = useParams<{ enrollmentId: string }>();
@@ -18,20 +18,12 @@ const Confirmation = () => {
     if (!enrollmentId) return;
 
     try {
-      const { data: enrollment } = await supabase
-        .from("enrollments")
-        .select("email")
-        .eq("id", enrollmentId)
-        .single();
-
-      const { data: payment } = await supabase
-        .from("payment_info")
-        .select("method")
-        .eq("enrollment_id", enrollmentId)
-        .single();
-
-      if (enrollment) setEmail(enrollment.email);
-      if (payment) setPaymentMethod(payment.method);
+      const data = await gigApi<{ email: string; method: string }>(
+        "confirmation",
+        { enrollmentId },
+      );
+      setEmail(data.email || "");
+      setPaymentMethod(data.method || "");
     } catch (error) {
       console.error("Error:", error);
     } finally {

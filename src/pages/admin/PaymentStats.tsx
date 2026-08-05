@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { adminDb } from "@/lib/adminDb";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader2 } from "lucide-react";
 
@@ -25,7 +25,8 @@ interface PaymentStatsData {
   submissions: PaymentMethodSubmissions;
 }
 
-export function PaymentStats() {
+export function PaymentStats({ adminKey }: { adminKey: string }) {
+  const db = adminDb(adminKey);
   const [stats, setStats] = useState<PaymentStatsData | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -38,7 +39,7 @@ export function PaymentStats() {
       setLoading(true);
       
       // Fetch payment info submissions count by method
-      const { data: submissionsData, error: submissionsError } = await supabase
+      const { data: submissionsData, error: submissionsError } = await db
         .from("payment_info")
         .select("method");
       
@@ -58,7 +59,7 @@ export function PaymentStats() {
       });
       
       // Fetch all payment records with payment method info
-      const { data, error } = await supabase
+      const { data, error } = await db
         .from("payment_records")
         .select(`
           amount,
@@ -67,7 +68,7 @@ export function PaymentStats() {
             payment_info:payment_info(method)
           )
         `)
-        .not("amount", "is", null);
+        .notNull("amount");
 
       if (error) throw error;
 
