@@ -58,11 +58,12 @@ type Spec = {
 };
 
 function isAuthorized(key: unknown): boolean {
-  if (typeof key !== "string" || key.length === 0) return false;
+  if (typeof key !== "string" || key.trim().length === 0) return false;
+  const provided = key.trim();
   const keys = [Deno.env.get("ADMIN_KEY"), Deno.env.get("ADMIN_KEY_2")].filter(
     (k): k is string => typeof k === "string" && k.length > 0,
   );
-  return keys.some((k) => k === key);
+  return keys.some((k) => k.trim() === provided);
 }
 
 function applyFilters(query: any, filters: Filter[] = []) {

@@ -15,7 +15,10 @@ const Confirmation = () => {
   }, [enrollmentId]);
 
   const loadConfirmation = async () => {
-    if (!enrollmentId) return;
+    if (!enrollmentId || enrollmentId.startsWith(":")) {
+      setLoading(false);
+      return;
+    }
 
     try {
       const data = await gigApi<{ email: string; method: string }>(
