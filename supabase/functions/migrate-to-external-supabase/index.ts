@@ -93,16 +93,32 @@ Deno.serve(async (req) => {
       return json({ action, results });
     }
 
-    if (action === "copy-storage") {
-      const { data: bucket } = await dst.storage.getBucket(BUCKET);
-      if (!bucket) {
-        const { error } = await dst.storage.createBucket(BUCKET, { public: false });
-        if (error) return json({ error: `create bucket: ${error.message}` }, 500);
-      } else if (bucket.public) {
-        const { error } = await dst.storage.updateBucket(BUCKET, { public: false });
-        if (error) return json({ error: `make bucket private: ${error.message}` }, 500);
+    if (action === "copy-storage" || action === "count-storage") {
+      // Batched by top-level folder: body.offset (default 0), body.limit (default 40)
+      const offset = Number(body?.offset ?? 0);
+      const limit = Math.min(Number(body?.limit ?? 40), 200);
+      if (action === "copy-storage" && offset === 0) {
+        const { data: bucket } = await dst.storage.getBucket(BUCKET);
+        if (!bucket) {
+          const { error } = await dst.storage.createBucket(BUCKET, { public: false });
+          if (error) return json({ error: `create bucket: ${error.message}` }, 500);
+        } else if (bucket.public) {
+          const { error } = await dst.storage.updateBucket(BUCKET, { public: false });
+          if (error) return json({ error: `make bucket private: ${error.message}` }, 500);
+        }
       }
-      const objects = await listAll(src);
+      const client = action === "count-storage" && body?.side === "destination" ? dst : src;
+      const { data: top, error: topErr } = await client.storage.from(BUCKET).list("", {
+        limit, offset, sortBy: { column: "name", order: "asc" },
+      });
+      if (topErr) return json({ error: `list root: ${topErr.message}` }, 500);
+      const objects: { path: string; mimetype?: string }[] = [];
+      for (const item of top ?? []) {
+        if (item.id === null) objects.push(...(await listAll(client, item.name)));
+        else objects.push({ path: item.name, mimetype: (item.metadata as any)?.mimetype });
+      }
+      const done = (top?.length ?? 0) < limit;
+      if (action === "count-storage") return json({ action, offset, entries: top?.length ?? 0, objects: objects.length, done });
       let copied = 0;
       const errors: string[] = [];
       for (const o of objects) {
@@ -115,7 +131,7 @@ Deno.serve(async (req) => {
         if (upErr) errors.push(`upload ${o.path}: ${upErr.message}`);
         else copied++;
       }
-      return json({ action, total: objects.length, copied, failed: errors.length, errors: errors.slice(0, 20) });
+      return json({ action, offset, total: objects.length, copied, failed: errors.length, errors: errors.slice(0, 10), done });
     }
 
     if (action === "verify") {
@@ -124,20 +140,12 @@ Deno.serve(async (req) => {
         const [s, d] = await Promise.all([countRows(src, t), countRows(dst, t)]);
         tables[t] = { source: s, destination: d, match: s === d };
       }
-      let storage: unknown;
-      try {
-        const [s, d] = await Promise.all([listAll(src), listAll(dst).catch(() => [])]);
-        storage = { source: s.length, destination: d.length, match: s.length === d.length };
-      } catch (e) {
-        storage = { error: (e as Error).message };
-      }
-      let sourceAuthUsers: unknown;
       const { data: users, error: uErr } = await src.auth.admin.listUsers({ page: 1, perPage: 1000 });
-      sourceAuthUsers = uErr ? { error: uErr.message } : { count: users.users.length, note: "not migrated; handle separately" };
-      return json({ action, tables, storage, sourceAuthUsers });
+      const sourceAuthUsers = uErr ? { error: uErr.message } : { count: users.users.length, note: "not migrated" };
+      return json({ action, tables, sourceAuthUsers, storage: "use count-storage (batched)" });
     }
 
-    return json({ error: "invalid action; use copy-data | copy-storage | verify" }, 400);
+    return json({ error: "invalid action" }, 400);
   } catch (e) {
     return json({ error: (e as Error).message }, 500);
   }
