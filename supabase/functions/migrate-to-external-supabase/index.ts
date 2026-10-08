@@ -114,10 +114,10 @@ Deno.serve(async (req) => {
         limit, offset, sortBy: { column: "name", order: "asc" },
       });
       if (topErr) return json({ error: `list root: ${topErr.message}` }, 500);
-      const objects: { path: string; mimetype?: string }[] = [];
+      const objects: Obj[] = [];
       for (const item of top ?? []) {
         if (item.id === null) objects.push(...(await listAll(client, item.name)));
-        else objects.push({ path: item.name, mimetype: (item.metadata as any)?.mimetype });
+        else objects.push({ path: item.name, mimetype: (item.metadata as any)?.mimetype, size: (item.metadata as any)?.size });
       }
       const done = (top?.length ?? 0) < limit;
       if (action === "count-storage") return json({ action, offset, entries: top?.length ?? 0, objects: objects.length, done });
