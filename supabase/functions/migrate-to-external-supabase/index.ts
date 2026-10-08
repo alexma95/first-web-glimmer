@@ -29,8 +29,10 @@ function safeEqual(a: string, b: string) {
   return r === 0;
 }
 
-async function listAll(c: SupabaseClient, prefix = ""): Promise<{ path: string; mimetype?: string }[]> {
-  const out: { path: string; mimetype?: string }[] = [];
+const MAX_BYTES = 50 * 1024 * 1024;
+type Obj = { path: string; mimetype?: string; size?: number };
+async function listAll(c: SupabaseClient, prefix = ""): Promise<Obj[]> {
+  const out: Obj[] = [];
   let offset = 0;
   while (true) {
     const { data, error } = await c.storage.from(BUCKET).list(prefix, { limit: 1000, offset });
@@ -39,7 +41,7 @@ async function listAll(c: SupabaseClient, prefix = ""): Promise<{ path: string; 
     for (const item of data) {
       const p = prefix ? `${prefix}/${item.name}` : item.name;
       if (item.id === null) out.push(...(await listAll(c, p))); // folder
-      else out.push({ path: p, mimetype: (item.metadata as any)?.mimetype });
+      else out.push({ path: p, mimetype: (item.metadata as any)?.mimetype, size: (item.metadata as any)?.size });
     }
     if (data.length < 1000) break;
     offset += 1000;
@@ -112,16 +114,18 @@ Deno.serve(async (req) => {
         limit, offset, sortBy: { column: "name", order: "asc" },
       });
       if (topErr) return json({ error: `list root: ${topErr.message}` }, 500);
-      const objects: { path: string; mimetype?: string }[] = [];
+      const objects: Obj[] = [];
       for (const item of top ?? []) {
         if (item.id === null) objects.push(...(await listAll(client, item.name)));
-        else objects.push({ path: item.name, mimetype: (item.metadata as any)?.mimetype });
+        else objects.push({ path: item.name, mimetype: (item.metadata as any)?.mimetype, size: (item.metadata as any)?.size });
       }
       const done = (top?.length ?? 0) < limit;
       if (action === "count-storage") return json({ action, offset, entries: top?.length ?? 0, objects: objects.length, done });
       let copied = 0;
       const errors: string[] = [];
+      const skipped: { path: string; size: number }[] = [];
       for (const o of objects) {
+        if ((o.size ?? 0) > MAX_BYTES) { skipped.push({ path: o.path, size: o.size! }); continue; }
         const { data: blob, error: dlErr } = await src.storage.from(BUCKET).download(o.path);
         if (dlErr || !blob) { errors.push(`download ${o.path}: ${dlErr?.message}`); continue; }
         const { error: upErr } = await dst.storage.from(BUCKET).upload(o.path, blob, {
@@ -131,7 +135,32 @@ Deno.serve(async (req) => {
         if (upErr) errors.push(`upload ${o.path}: ${upErr.message}`);
         else copied++;
       }
-      return json({ action, offset, total: objects.length, copied, failed: errors.length, errors: errors.slice(0, 10), done });
+      return json({ action, offset, total: objects.length, copied, skipped, failed: errors.length, errors: errors.slice(0, 10), done });
+    }
+
+    if (action === "signed-urls") {
+      const path = String(body?.path ?? "");
+      if (!path) return json({ error: "path required" }, 400);
+      const { data: d, error: e1 } = await src.storage.from(BUCKET).createSignedUrl(path, 600);
+      if (e1) return json({ error: `source sign: ${e1.message}` }, 500);
+      const { data: u, error: e2 } = await dst.storage.from(BUCKET).createSignedUploadUrl(path, { upsert: true });
+      if (e2) return json({ error: `dest sign: ${e2.message}` }, 500);
+      return json({ download: d.signedUrl, upload: u.signedUrl });
+    }
+
+    if (action === "bucket-status") {
+      const { data, error } = await dst.storage.getBucket(BUCKET);
+      if (error) return json({ error: error.message }, 500);
+      return json({ public: data.public, file_size_limit: data.file_size_limit });
+    }
+
+    if (action === "object-exists") {
+      const path = String(body?.path ?? "");
+      const i = path.lastIndexOf("/");
+      const { data, error } = await dst.storage.from(BUCKET).list(path.slice(0, i), { search: path.slice(i + 1) });
+      if (error) return json({ error: error.message }, 500);
+      const f = data?.find((x) => x.name === path.slice(i + 1));
+      return json({ exists: !!f, size: (f?.metadata as any)?.size ?? null });
     }
 
     if (action === "verify") {
