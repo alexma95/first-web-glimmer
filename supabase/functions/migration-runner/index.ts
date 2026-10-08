@@ -9,7 +9,7 @@ Deno.serve(async (req) => {
   if (!ALLOWED.has(body?.action)) {
     return new Response(JSON.stringify({ error: "invalid action" }), { status: 400, headers: corsHeaders });
   }
-  const payload = { action: body.action, offset: body.offset, limit: body.limit, side: body.side, path: body.path };
+  const payload = { action: body.action, offset: body.offset, limit: body.limit, side: body.side, path: body.path, concurrency: body.concurrency };
   const r = await fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/migrate-to-external-supabase`, {
     method: "POST",
     headers: {

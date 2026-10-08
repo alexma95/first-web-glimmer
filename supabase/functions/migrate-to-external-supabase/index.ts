@@ -121,21 +121,44 @@ Deno.serve(async (req) => {
       }
       const done = (top?.length ?? 0) < limit;
       if (action === "count-storage") return json({ action, offset, entries: top?.length ?? 0, objects: objects.length, done });
-      let copied = 0;
+      // Destination sizes for the same folders (to skip already-present objects)
+      const dstSizes = new Map<string, number>();
+      for (const item of top ?? []) {
+        try {
+          const list = item.id === null ? await listAll(dst, item.name) : [];
+          for (const d of list) dstSizes.set(d.path, d.size ?? -1);
+        } catch (_) { /* folder missing in destination */ }
+      }
+      let copied = 0, alreadyPresent = 0;
       const errors: string[] = [];
       const skipped: { path: string; size: number }[] = [];
+      const queue: Obj[] = [];
       for (const o of objects) {
         if ((o.size ?? 0) > MAX_BYTES) { skipped.push({ path: o.path, size: o.size! }); continue; }
-        const { data: blob, error: dlErr } = await src.storage.from(BUCKET).download(o.path);
-        if (dlErr || !blob) { errors.push(`download ${o.path}: ${dlErr?.message}`); continue; }
-        const { error: upErr } = await dst.storage.from(BUCKET).upload(o.path, blob, {
-          upsert: true,
-          contentType: o.mimetype || blob.type || "application/octet-stream",
-        });
-        if (upErr) errors.push(`upload ${o.path}: ${upErr.message}`);
-        else copied++;
+        if (dstSizes.has(o.path) && dstSizes.get(o.path) === o.size) { alreadyPresent++; continue; }
+        queue.push(o);
       }
-      return json({ action, offset, total: objects.length, copied, skipped, failed: errors.length, errors: errors.slice(0, 10), done });
+      const conc = Math.max(1, Math.min(Number(body?.concurrency ?? 8), 12));
+      let idx = 0;
+      const worker = async () => {
+        while (idx < queue.length) {
+          const o = queue[idx++];
+          const { data: blob, error: dlErr } = await src.storage.from(BUCKET).download(o.path);
+          if (dlErr || !blob) { errors.push(`download ${o.path}: ${dlErr?.message}`); continue; }
+          const { error: upErr } = await dst.storage.from(BUCKET).upload(o.path, blob, {
+            upsert: true,
+            contentType: o.mimetype || blob.type || "application/octet-stream",
+          });
+          if (upErr) errors.push(`upload ${o.path}: ${upErr.message}`);
+          else copied++;
+        }
+      };
+      await Promise.all(Array.from({ length: conc }, worker));
+      return json({
+        action, offset, next_offset: offset + (top?.length ?? 0), folders_processed: top?.length ?? 0,
+        total_objects_seen: objects.length, copied, already_present: alreadyPresent,
+        skipped_large: skipped, failed: errors.length, errors: errors.slice(0, 10), done,
+      });
     }
 
     if (action === "signed-urls") {
