@@ -209,7 +209,12 @@ Deno.serve(async (req) => {
       for (const item of top ?? []) {
         const s = item.id === null ? await listAll(src, item.name) : [{ path: item.name }];
         let d: Obj[] = [];
-        try { d = item.id === null ? await listAll(dst, item.name) : []; } catch (_) { /* none */ }
+        if (item.id === null) {
+          for (let a = 0; a < 4; a++) {
+            try { d = await listAll(dst, item.name); if (d.length >= s.length) break; } catch (_) { /* retry */ }
+            await new Promise((r) => setTimeout(r, 400 * (a + 1)));
+          }
+        }
         const dset = new Set(d.map((x) => x.path));
         srcN += s.length; dstN += d.length;
         for (const o of s) if (!dset.has(o.path)) missing.push(o.path);
