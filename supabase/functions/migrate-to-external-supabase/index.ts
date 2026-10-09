@@ -194,7 +194,32 @@ Deno.serve(async (req) => {
       }
       const { data: users, error: uErr } = await src.auth.admin.listUsers({ page: 1, perPage: 1000 });
       const sourceAuthUsers = uErr ? { error: uErr.message } : { count: users.users.length, note: "not migrated" };
-      return json({ action, tables, sourceAuthUsers, storage: "use count-storage (batched)" });
+      const { data: dUsers, error: dErr } = await dst.auth.admin.listUsers({ page: 1, perPage: 1000 });
+      const destinationAuthUsers = dErr ? { error: dErr.message } : { count: dUsers.users.length };
+      return json({ action, tables, sourceAuthUsers, destinationAuthUsers });
+    }
+
+    if (action === "diff-storage") {
+      const offset = Number(body?.offset ?? 0);
+      const limit = Math.min(Number(body?.limit ?? 100), 200);
+      const { data: top, error } = await src.storage.from(BUCKET).list("", { limit, offset, sortBy: { column: "name", order: "asc" } });
+      if (error) return json({ error: error.message }, 500);
+      const missing: string[] = [];
+      let srcN = 0, dstN = 0;
+      for (const item of top ?? []) {
+        const s = item.id === null ? await listAll(src, item.name) : [{ path: item.name }];
+        let d: Obj[] = [];
+        if (item.id === null) {
+          for (let a = 0; a < 4; a++) {
+            try { d = await listAll(dst, item.name); if (d.length >= s.length) break; } catch (_) { /* retry */ }
+            await new Promise((r) => setTimeout(r, 400 * (a + 1)));
+          }
+        }
+        const dset = new Set(d.map((x) => x.path));
+        srcN += s.length; dstN += d.length;
+        for (const o of s) if (!dset.has(o.path)) missing.push(o.path);
+      }
+      return json({ action, offset, next_offset: offset + (top?.length ?? 0), source: srcN, destination: dstN, missing, done: (top?.length ?? 0) < limit });
     }
 
     return json({ error: "invalid action" }, 400);
