@@ -1,7 +1,7 @@
 // TEMPORARY internal runner. Delete right after migration.
 import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
 
-const ALLOWED = new Set(["copy-data", "copy-storage", "count-storage", "verify", "signed-urls", "bucket-status", "object-exists"]);
+const ALLOWED = new Set(["copy-data", "copy-storage", "count-storage", "verify", "signed-urls", "bucket-status", "object-exists", "diff-storage"]);
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
