@@ -103,7 +103,7 @@ Deno.serve(async (req) => {
           if (data.length < BATCH) break;
           from += BATCH;
         }
-        results[t] = err ? { copied, error: err } : { copied };
+        results[t] = err ? { copied, staleRemoved, error: err } : { copied, staleRemoved };
         if (err) break; // stop to preserve dependency order
       }
       return json({ action, results });
