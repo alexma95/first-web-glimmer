@@ -88,9 +88,14 @@ Deno.serve(async (req) => {
             // Destination-only: drop stale rows that hold the same unique enrollment_id under a different id
             const ids = new Set(data.map((r: any) => r.id));
             const enr = data.map((r: any) => r.enrollment_id);
-            const { data: ex, error: exErr } = await dst.from(t).select("id").in("enrollment_id", enr);
-            if (exErr) { err = `stale check at offset ${from}: ${exErr.message}`; break; }
-            const stale = (ex ?? []).map((r: any) => r.id).filter((id: string) => !ids.has(id));
+            const ex: any[] = []; let exMsg: string | null = null;
+            for (let k = 0; k < enr.length; k += 50) {
+              const { data: part, error: exErr } = await dst.from(t).select("id").in("enrollment_id", enr.slice(k, k + 50));
+              if (exErr) { exMsg = exErr.message.slice(0, 200); break; }
+              ex.push(...(part ?? []));
+            }
+            if (exMsg) { err = `stale check at offset ${from}: ${exMsg}`; break; }
+            const stale = ex.map((r: any) => r.id).filter((id: string) => !ids.has(id));
             if (stale.length) {
               const { error: dErr } = await dst.from(t).delete().in("id", stale);
               if (dErr) { err = `stale delete at offset ${from}: ${dErr.message}`; break; }
