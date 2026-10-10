@@ -223,7 +223,7 @@ Deno.serve(async (req) => {
       const limit = Math.min(Number(body?.limit ?? 100), 200);
       const { data: top, error } = await src.storage.from(BUCKET).list("", { limit, offset, sortBy: { column: "name", order: "asc" } });
       if (error) return json({ error: error.message }, 500);
-      const missing: string[] = [];
+      const missing: string[] = [], sizeMismatch: string[] = [], extra: string[] = [];
       let srcN = 0, dstN = 0;
       for (const item of top ?? []) {
         const s = item.id === null ? await listAll(src, item.name) : [{ path: item.name }];
@@ -234,11 +234,16 @@ Deno.serve(async (req) => {
             await new Promise((r) => setTimeout(r, 400 * (a + 1)));
           }
         }
-        const dset = new Set(d.map((x) => x.path));
+        const dmap = new Map(d.map((x) => [x.path, x.size ?? -1]));
+        const sset = new Set(s.map((x) => x.path));
         srcN += s.length; dstN += d.length;
-        for (const o of s) if (!dset.has(o.path)) missing.push(o.path);
+        for (const o of s as Obj[]) {
+          if (!dmap.has(o.path)) missing.push(o.path);
+          else if (dmap.get(o.path) !== (o.size ?? -1)) sizeMismatch.push(o.path);
+        }
+        for (const x of d) if (!sset.has(x.path)) extra.push(x.path);
       }
-      return json({ action, offset, next_offset: offset + (top?.length ?? 0), source: srcN, destination: dstN, missing, done: (top?.length ?? 0) < limit });
+      return json({ action, offset, next_offset: offset + (top?.length ?? 0), source: srcN, destination: dstN, missing, sizeMismatch, extra, done: (top?.length ?? 0) < limit });
     }
 
     return json({ error: "invalid action" }, 400);
