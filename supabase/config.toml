@@ -1,4 +1,19 @@
-project_id = "wuqztxmxvqikjyfrlecc"
+project_id = "smvypzqcjzcwhuehabri"
+
+[functions.admin-bulk-actions]
+verify_jwt = false
+
+[functions.admin-db]
+verify_jwt = false
 
 [functions.admin-manage-text-options]
+verify_jwt = false
+
+[functions.gig-api]
+verify_jwt = false
+
+[functions.notify-submission]
+verify_jwt = false
+
+[functions.send-notification]
 verify_jwt = false
