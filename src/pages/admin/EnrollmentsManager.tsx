@@ -791,7 +791,7 @@ export function EnrollmentsManager({ adminKey }: EnrollmentsManagerProps) {
                             >
                               {assignment.files.mime_type?.startsWith('image/') ? (
                                 <img
-                                  src={`${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/proofs/${assignment.files.storage_key}`}
+                                  src={`https://smvypzqcjzcwhuehabri.supabase.co/storage/v1/object/public/proofs/${assignment.files.storage_key}`}
                                   alt={`Proof ${idx + 1}`}
                                   className="w-12 h-12 object-cover rounded border hover:border-primary cursor-pointer"
                                   onError={(e) => {
