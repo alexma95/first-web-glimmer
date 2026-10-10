@@ -79,10 +79,24 @@ Deno.serve(async (req) => {
         let copied = 0;
         let from = 0;
         let err: string | null = null;
+        let staleRemoved = 0;
         while (true) {
           const { data, error } = await src.from(t).select("*").order("id").range(from, from + BATCH - 1);
           if (error) { err = `read: ${error.message}`; break; }
           if (!data || data.length === 0) break;
+          if (t === "payment_info") {
+            // Destination-only: drop stale rows that hold the same unique enrollment_id under a different id
+            const ids = new Set(data.map((r: any) => r.id));
+            const enr = data.map((r: any) => r.enrollment_id);
+            const { data: ex, error: exErr } = await dst.from(t).select("id").in("enrollment_id", enr);
+            if (exErr) { err = `stale check at offset ${from}: ${exErr.message}`; break; }
+            const stale = (ex ?? []).map((r: any) => r.id).filter((id: string) => !ids.has(id));
+            if (stale.length) {
+              const { error: dErr } = await dst.from(t).delete().in("id", stale);
+              if (dErr) { err = `stale delete at offset ${from}: ${dErr.message}`; break; }
+              staleRemoved += stale.length;
+            }
+          }
           const { error: upErr } = await dst.from(t).upsert(data, { onConflict: "id" });
           if (upErr) { err = `write at offset ${from}: ${upErr.message}`; break; }
           copied += data.length;
