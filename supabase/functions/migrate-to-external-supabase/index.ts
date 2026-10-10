@@ -79,17 +79,36 @@ Deno.serve(async (req) => {
         let copied = 0;
         let from = 0;
         let err: string | null = null;
+        let staleRemoved = 0;
         while (true) {
           const { data, error } = await src.from(t).select("*").order("id").range(from, from + BATCH - 1);
           if (error) { err = `read: ${error.message}`; break; }
           if (!data || data.length === 0) break;
+          if (t === "payment_info") {
+            // Destination-only: drop stale rows that hold the same unique enrollment_id under a different id
+            const ids = new Set(data.map((r: any) => r.id));
+            const enr = data.map((r: any) => r.enrollment_id);
+            const ex: any[] = []; let exMsg: string | null = null;
+            for (let k = 0; k < enr.length; k += 50) {
+              const { data: part, error: exErr } = await dst.from(t).select("id").in("enrollment_id", enr.slice(k, k + 50));
+              if (exErr) { exMsg = exErr.message.slice(0, 200); break; }
+              ex.push(...(part ?? []));
+            }
+            if (exMsg) { err = `stale check at offset ${from}: ${exMsg}`; break; }
+            const stale = ex.map((r: any) => r.id).filter((id: string) => !ids.has(id));
+            if (stale.length) {
+              const { error: dErr } = await dst.from(t).delete().in("id", stale);
+              if (dErr) { err = `stale delete at offset ${from}: ${dErr.message}`; break; }
+              staleRemoved += stale.length;
+            }
+          }
           const { error: upErr } = await dst.from(t).upsert(data, { onConflict: "id" });
           if (upErr) { err = `write at offset ${from}: ${upErr.message}`; break; }
           copied += data.length;
           if (data.length < BATCH) break;
           from += BATCH;
         }
-        results[t] = err ? { copied, error: err } : { copied };
+        results[t] = err ? { copied, staleRemoved, error: err } : { copied, staleRemoved };
         if (err) break; // stop to preserve dependency order
       }
       return json({ action, results });
@@ -204,7 +223,7 @@ Deno.serve(async (req) => {
       const limit = Math.min(Number(body?.limit ?? 100), 200);
       const { data: top, error } = await src.storage.from(BUCKET).list("", { limit, offset, sortBy: { column: "name", order: "asc" } });
       if (error) return json({ error: error.message }, 500);
-      const missing: string[] = [];
+      const missing: string[] = [], sizeMismatch: string[] = [], extra: string[] = [];
       let srcN = 0, dstN = 0;
       for (const item of top ?? []) {
         const s = item.id === null ? await listAll(src, item.name) : [{ path: item.name }];
@@ -215,11 +234,16 @@ Deno.serve(async (req) => {
             await new Promise((r) => setTimeout(r, 400 * (a + 1)));
           }
         }
-        const dset = new Set(d.map((x) => x.path));
+        const dmap = new Map(d.map((x) => [x.path, x.size ?? -1]));
+        const sset = new Set(s.map((x) => x.path));
         srcN += s.length; dstN += d.length;
-        for (const o of s) if (!dset.has(o.path)) missing.push(o.path);
+        for (const o of s as Obj[]) {
+          if (!dmap.has(o.path)) missing.push(o.path);
+          else if (dmap.get(o.path) !== (o.size ?? -1)) sizeMismatch.push(o.path);
+        }
+        for (const x of d) if (!sset.has(x.path)) extra.push(x.path);
       }
-      return json({ action, offset, next_offset: offset + (top?.length ?? 0), source: srcN, destination: dstN, missing, done: (top?.length ?? 0) < limit });
+      return json({ action, offset, next_offset: offset + (top?.length ?? 0), source: srcN, destination: dstN, missing, sizeMismatch, extra, done: (top?.length ?? 0) < limit });
     }
 
     return json({ error: "invalid action" }, 400);
