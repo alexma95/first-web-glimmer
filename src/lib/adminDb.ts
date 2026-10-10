@@ -9,8 +9,7 @@
  * that the admin pages use.
  */
 
-const FUNCTION_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-db`;
-const ANON_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string;
+const FUNCTION_URL = "https://smvypzqcjzcwhuehabri.supabase.co/functions/v1/admin-db";
 
 type Filter = {
   type: "eq" | "neq" | "in" | "is" | "gte" | "lte" | "not_null";
@@ -51,8 +50,6 @@ async function execute<T = any>(
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${ANON_KEY}`,
-        apikey: ANON_KEY,
       },
       body: JSON.stringify({ adminKey, spec }),
     });
