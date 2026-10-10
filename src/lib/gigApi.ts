@@ -6,8 +6,7 @@
  * enrollment and payment data is never exposed to anonymous clients.
  */
 
-const FUNCTION_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/gig-api`;
-const ANON_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string;
+const FUNCTION_URL = "https://smvypzqcjzcwhuehabri.supabase.co/functions/v1/gig-api";
 
 export class GigApiError extends Error {
   code: string;
@@ -25,8 +24,6 @@ export async function gigApi<T = any>(
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${ANON_KEY}`,
-      apikey: ANON_KEY,
     },
     body: JSON.stringify({ action, ...payload }),
   });
